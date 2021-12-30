@@ -1,0 +1,505 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Drawing;
+using System.Text.RegularExpressions;
+using System.Media;
+using Unbroken.LaunchBox.Plugins;
+using Unbroken.LaunchBox.Plugins.Data;
+using System.IO;
+
+namespace OmegaSettingsMenu
+{
+    class MenuItem
+    {
+        public MenuItem(OmegaSettingsForm parent, Point location)
+        {
+            MenuItemSetup(parent, location, "");
+        }
+
+        public MenuItem(OmegaSettingsForm parent, Point location, String name)
+        {
+            MenuItemSetup(parent, location, name);
+        }
+        private void MenuItemSetup(OmegaSettingsForm parent, Point location, String name)
+        {
+            my_parent = parent;
+            
+            labelItem = new Label();
+            my_parent.get_panel().Controls.Add(this.labelItem);
+            this.labelItem.BackColor = System.Drawing.Color.Black;
+            this.labelItem.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.labelItem.Enabled = true;
+            this.labelItem.Font = new System.Drawing.Font("Microsoft Sans Serif", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelItem.ForeColor = System.Drawing.Color.White;
+            this.labelItem.Location = location;
+            this.labelItem.Name = "label1";
+            this.labelItem.Size = new System.Drawing.Size(240, 80);
+            this.labelItem.TabIndex = 0;
+            this.labelItem.TabStop = false;
+            this.labelItem.AutoSize = true;
+            this.labelItem.TextAlign = ContentAlignment.MiddleLeft;
+
+            this.add_values();
+            this.set_name(name);
+
+            //Strip whitespace to create the XML tag.
+            this.XMLTag = Regex.Replace(this.Name, @"\s+", "");
+        }
+
+        public void set_focus(bool on)
+        {
+            if (on)
+            {
+                this.labelItem.ForeColor = System.Drawing.Color.CornflowerBlue;
+            }
+            else
+            {
+                this.labelItem.ForeColor = System.Drawing.Color.White;
+            }
+        }
+        
+        public String get_name() {return Name;}
+
+
+        public void set_value_by_index(int index)
+        {
+            if(index < ValueList.Count)
+            {
+                ValueIndex = index;
+                Value = ValueList.ElementAtOrDefault(ValueIndex);
+                this.update_display();
+            }
+        }
+
+
+        public String get_value() {return Value;}
+
+        
+
+
+
+        public void set_location(Point location)
+        {
+            this.labelItem.Location = new Point(location.X, location.Y);
+        }
+
+        protected string Name;
+        protected string Value = "";
+        protected string XMLTag = "";
+        internal Label labelItem;
+
+        protected OmegaSettingsForm my_parent;
+
+        public List<String> ValueList = new List<String>();
+        protected int ValueIndex = 0;
+
+        public void set_name(string name)
+        {
+            Name = name;
+            this.update_display();
+        }
+
+
+        //Override these:
+        public virtual void on_right()
+        {
+        }
+
+        public virtual void on_left()
+        {
+        }
+
+        public virtual void on_enter()
+        {
+            if(ValueList.Count > 0)
+            {
+                set_value_by_index((ValueIndex + 1) % ValueList.Count);
+
+                my_parent.SelectPlayer.controls.stop();
+                my_parent.SelectPlayer.controls.play();
+            }
+        }
+
+        public virtual void add_values()
+        {
+
+        }
+
+        public virtual void apply_setting()
+        {
+
+        }
+
+        public virtual String get_default_value()
+        {
+            if (ValueList.Count > 0)
+                return ValueList[0];
+            else
+                return "";
+        }
+
+        public virtual String get_tips()
+        {
+            return "";
+        }
+
+        public virtual String get_xmltag() { return XMLTag; }
+        protected virtual void update_display() { this.labelItem.Text = " " + Name + ": " + Value; }
+
+        public virtual void set_value(string value)
+        {
+            ValueIndex = Math.Max(0, ValueList.IndexOf(value));
+            Value = ValueList.ElementAtOrDefault(ValueIndex);
+
+            if (String.IsNullOrEmpty(Value))
+            {
+                Value = get_default_value();
+            }
+            this.update_display();
+        }
+
+    }
+}
+
+
+
+
+namespace OmegaSettingsMenu
+{
+    class CounterTypeMenuItem : MenuItem
+    {
+        public CounterTypeMenuItem(OmegaSettingsForm parent, Point location, String name) : base(parent, location, name) { }
+
+        public override string get_default_value() { return "0"; }
+
+        public override void on_right()
+        {
+            my_parent.SelectPlayer.controls.stop();
+            my_parent.SelectPlayer.controls.play();
+
+            int val;
+            Int32.TryParse(Value, out val);
+
+            set_value((val + 1).ToString());
+        }
+        public override void on_left()
+        {
+            my_parent.SelectPlayer.controls.stop();
+            my_parent.SelectPlayer.controls.play();
+
+            int val;
+            Int32.TryParse(Value, out val);
+
+            if (val > 0)
+                set_value((val - 1).ToString());
+        }
+
+        public override void set_value(string value)
+        {
+            Value = value;
+            if (String.IsNullOrEmpty(Value))
+            {
+                Value = get_default_value();
+            }
+            this.update_display();
+        }
+    }
+
+
+    class EnabledDisabledTypeMenuItem : MenuItem
+    {
+        public EnabledDisabledTypeMenuItem(OmegaSettingsForm parent, Point location, String name) : base(parent, location, name) { }
+
+        public override void add_values()
+        {
+            ValueList.Add("Enabled");
+            ValueList.Add("Disabled");
+        }
+    }
+
+    class EnabledDisabledManualTypeMenuItem : MenuItem
+    {
+        public EnabledDisabledManualTypeMenuItem(OmegaSettingsForm parent, Point location, String name) : base(parent, location, name) { }
+
+        public override void add_values()
+        {
+            ValueList.Add("Enabled");
+            ValueList.Add("Disabled");
+            ValueList.Add("Manual");
+        }
+    }
+
+    class NoValueTypeMenuItem : MenuItem
+    {
+        public NoValueTypeMenuItem(OmegaSettingsForm parent, Point location, String name) : base(parent, location, name) { }
+
+        public override String get_xmltag() { return ""; } //Don't query XML file for a value
+        protected override void update_display() { this.labelItem.Text = " " + Name; }
+
+        public override void on_enter()
+        {
+            my_parent.SelectPlayer.controls.stop();
+            my_parent.SelectPlayer.controls.play();
+
+            perform_the_no_value_action();
+        }
+
+        protected virtual void perform_the_no_value_action() { }
+    }
+
+
+
+
+
+
+    /* ------------------------------------------------------------------------ */
+    /* ------------------------------------------------------------------------ */
+    /* ------------------------------------------------------------------------ */
+    /* ------------------------------------------------------------------------ */
+    /* ------------------------------------------------------------------------ */
+
+
+
+
+    class MarqueeWidthMenuItem : CounterTypeMenuItem
+    {
+        public MarqueeWidthMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Marquee Width"){ }
+
+        public override string get_default_value() { return "1920"; }
+    }
+
+
+    class MarqueeHeightMenuItem : CounterTypeMenuItem
+    {
+        public MarqueeHeightMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Marquee Height") { }
+
+        public override string get_default_value() { return "340"; }
+    }
+
+    class MarqueeStretchMenuItem : MenuItem
+    {
+        public MarqueeStretchMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Marquee Stretch") { }
+
+        public override void add_values()
+        {
+            ValueList.Add("Fill");
+            ValueList.Add("Preserve Aspect Ratio (Horton Style)");
+        }
+    }
+
+    class MarqueeVerticalAlignmentMenuItem : MenuItem
+    {
+        public MarqueeVerticalAlignmentMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Marquee Vertical Alignment") { }
+
+        public override void add_values()
+        {
+            ValueList.Add("Top");
+            ValueList.Add("Center");
+        }
+    }
+
+
+    class ScanlinesMenuItem : EnabledDisabledManualTypeMenuItem
+    {
+        public ScanlinesMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Scanlines") { }
+
+        public override void apply_setting()
+        {
+            if (this.get_value().Equals("Manual"))
+            {
+                foreach (var emulator in PluginHelper.DataManager.GetAllEmulators())
+                {
+                    if (emulator.Title.StartsWith("MAME"))
+                    {
+                        //Get command line with video override removed
+                        String cmdline = emulator.CommandLine.Replace(" -video opengl", "");
+
+                        emulator.CommandLine = cmdline;
+                    }
+
+                }
+            }
+            else foreach (var emulator in PluginHelper.DataManager.GetAllEmulators())
+            {
+                if (emulator.Title.StartsWith("MAME"))
+                {
+                    //Get command line with video override removed
+                    String cmdline = emulator.CommandLine.Replace(" -video opengl", "");
+
+                    if (this.get_value().Equals("Disabled"))
+                    {
+                        //Override the video option to disable scanlines
+                        cmdline = cmdline + " -video opengl";
+                    }
+
+                    emulator.CommandLine = cmdline;
+                }
+
+                else if (emulator.Title.StartsWith("Retroarch"))
+                {
+                    String filename = Path.GetDirectoryName(emulator.ApplicationPath) + "/Retroarch.cfg";
+
+                    if(File.Exists(filename))
+                    {
+                        string text;
+                        try 
+                        { 
+                            text = File.ReadAllText(filename);
+
+                            if (this.get_value().Equals("Disabled"))
+                                text = text.Replace("video_shader_enable = \"true\"", "video_shader_enable = \"false\"");
+                            else
+                                text = text.Replace("video_shader_enable = \"false\"", "video_shader_enable = \"true\"");
+                            
+                            File.WriteAllText(filename, text);
+                        }
+                        catch 
+                        { 
+                        }
+                        
+                    }
+                }
+            }
+        }
+
+        public override String get_tips()
+        {
+            return "The Enabled/Disabled settings control scanlines globally for MAME and all Retroarch cores. Manual is for advanced users who want to alter scanline settings themselves in the settings files for MAME and the individual Retroarch cores.";
+        }
+    }
+
+    class AdultsOnlyGamesMenuItem : EnabledDisabledTypeMenuItem
+    {
+        public AdultsOnlyGamesMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Adults Only Games") { }
+
+        public override void apply_setting()
+        {
+            IPlaylist thePlaylist = null;
+
+            foreach (var playlist in PluginHelper.DataManager.GetAllPlaylists())
+            {
+                if (playlist.Name.Equals("Arcade - Mature Games"))
+                {
+                    //PLaylist exists
+                    thePlaylist = playlist;
+                    break;
+                }
+            }
+
+            if (thePlaylist != null)
+            {
+                bool enable = this.get_value().Equals("Enabled");
+
+                // Just remove the playlist from the wheel instead of also hiding the games.
+                // At some point BigBox was updated so that Playlist.GetAllGames does not
+                // return hidden games. It will still work in LaunchBox only if 
+                // "view->hide games->marked hidden" is not checked.
+                /*                foreach (var game in thePlaylist.GetAllGames(false))
+                                {
+                                    game.Hide = !enable;
+                                }
+                */
+
+                thePlaylist.IncludeWithPlatforms = enable;
+                //Save & Refresh
+                PluginHelper.DataManager.Save();
+                if (PluginHelper.LaunchBoxMainViewModel != null)
+                {
+                    PluginHelper.LaunchBoxMainViewModel.RefreshData();
+                }
+                PluginHelper.DataManager.ReloadIfNeeded();
+                //PluginHelper.DataManager.ForceReload();
+            }
+        }
+
+        public override void on_enter()
+        {
+            my_parent.Tips.set_tips("Note that a restart might be required before this change is reflected on the main Wheel.");
+            base.on_enter();
+        }
+
+    }
+
+
+    class GunTypeMenuItem : MenuItem
+    {
+        public GunTypeMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Gun Type") { }
+
+        public override void add_values()
+        {
+            ValueList.Add("IR (AimTrak / GUN4IR)");
+            ValueList.Add("Sinden");
+        }
+        public override void apply_setting()
+        {
+            IPlaylist thePlaylist = null;
+            IEmulator theMameEmulator = null;
+
+            foreach (var playlist in PluginHelper.DataManager.GetAllPlaylists())
+            {
+                if (playlist.Name.Equals("Arcade Lightgun Games"))
+                {
+                    //PLaylist exists
+                    thePlaylist = playlist;
+                    break;
+                }
+            }
+
+            if (thePlaylist != null)
+            {
+                String mame_emulator_tile = this.get_value().Equals("Sinden") ? "MAME-SINDEN":"MAME";
+                foreach (var emulator in PluginHelper.DataManager.GetAllEmulators())
+                {
+                    if (emulator.Title.Equals(mame_emulator_tile))
+                    {
+                        theMameEmulator = emulator;
+                        break;
+                    }
+                }
+
+                if (theMameEmulator != null)
+                {
+                    foreach (var game in thePlaylist.GetAllGames(false))
+                    {
+                        if (game.Platform.Equals("Arcade"))
+                        {
+                            game.EmulatorId = theMameEmulator.Id;
+                        }
+                    }
+                }
+                
+                //Save & Refresh
+                PluginHelper.DataManager.Save();
+                if (PluginHelper.LaunchBoxMainViewModel != null)
+                {
+                    PluginHelper.LaunchBoxMainViewModel.RefreshData();
+                }
+                PluginHelper.DataManager.ReloadIfNeeded();
+            }
+        }
+    }
+
+
+
+    class CancelMenuItem : NoValueTypeMenuItem
+    {
+        public CancelMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Cancel and Exit (updates will be discarded)") { }
+
+        protected override void perform_the_no_value_action() 
+        {
+            my_parent.apply_all_settings_and_exit(false);
+        }
+    }
+    class ExitMenuItem : NoValueTypeMenuItem
+    {
+        public ExitMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Apply Settings and Exit") { }
+        protected override void perform_the_no_value_action()
+        {
+            my_parent.apply_all_settings_and_exit(true);
+        }
+    }
+}
