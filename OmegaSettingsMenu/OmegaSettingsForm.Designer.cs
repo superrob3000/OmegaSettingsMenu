@@ -106,7 +106,7 @@ namespace OmegaSettingsMenu
 
         #endregion
 
-        private System.Windows.Forms.Panel panelWait;
+        public System.Windows.Forms.Panel panelWait;
         private System.Windows.Forms.Label labelWait;
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.Timer timerExit;

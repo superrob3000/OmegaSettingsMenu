@@ -10,6 +10,11 @@ using System.Media;
 using Unbroken.LaunchBox.Plugins;
 using Unbroken.LaunchBox.Plugins.Data;
 using System.IO;
+using System.Threading;
+using System.Runtime.InteropServices;
+using System.Xml.Linq;
+using System.Xml.XPath;
+using System.Xml;
 
 namespace OmegaSettingsMenu
 {
@@ -425,7 +430,7 @@ namespace OmegaSettingsMenu
     }
 
 
-    class GunTypeMenuItem : MenuItem
+    class GunTypeMenuItem : MenuItem  //Deprecated
     {
         public GunTypeMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Gun Type") { }
 
@@ -485,11 +490,184 @@ namespace OmegaSettingsMenu
 
 
 
+
+    class BackupFavoritesMenuItem : NoValueTypeMenuItem
+    {
+        public BackupFavoritesMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Export Favorites List") { }
+        protected override void perform_the_no_value_action()
+        {
+            try
+            {
+                //Use a new thread so as not to block the UI thread
+                Thread t = new Thread(() => {
+                    backup_favorites();
+                });
+                
+                //Thread must be STA for the file dialogue to show
+                t.SetApartmentState(ApartmentState.STA);
+                t.Start();
+            }
+            catch
+            {
+            }
+        }
+
+        private void backup_favorites()
+        {
+            XDocument xSettingsDoc;
+            int count = 0;
+
+            //Prompt for the backup file location
+            SaveFileDialog dlg = new SaveFileDialog();
+            dlg.CheckPathExists = true;
+            dlg.Title = "Where do you want to save the backup file?";
+            dlg.ValidateNames = true;
+            dlg.Filter = "binary files|*.bin";
+            dlg.AddExtension = true;
+            dlg.DefaultExt = ".bin";
+            dlg.InitialDirectory = "C:\\Users\\Administrator\\Desktop";
+            dlg.FileName = "favorites_backup.bin";
+            DialogResult result = dlg.ShowDialog(ForegroundWindow.CurrentWindow);
+            if (result != DialogResult.OK) // Test result.
+            {
+                return;
+            }
+
+            my_parent.panelWait.Show();
+
+            //Add all favorites to our backup XML
+            XElement FavoritesBackup = new XElement("FavoritesBackup");
+            foreach (var game in PluginHelper.DataManager.GetAllGames())
+            {
+                //Add each favorite game to the backup playlist
+                if (game.Favorite)
+                {
+                    FavoritesBackup.Add(
+                        new XElement("Favorite",
+                              new XElement("GameId", game.Id),
+                              new XElement("LaunchBoxDbId", game.LaunchBoxDbId),
+                              new XElement("GameTitle", game.Title),
+                              new XElement("GameFileName", Path.GetFileName(game.ApplicationPath)),
+                              new XElement("GamePlatform", game.Platform)
+                                )
+                        );
+                    count++;
+                }
+            }
+
+            //Write the backup XML file
+            if (File.Exists(dlg.FileName))
+                File.Delete(dlg.FileName);
+            xSettingsDoc = new XDocument();
+            xSettingsDoc.Add(FavoritesBackup);
+            xSettingsDoc.Save(dlg.FileName);
+
+            my_parent.panelWait.Hide();
+
+            MessageBox.Show(ForegroundWindow.CurrentWindow, "Exported " + count + " favorites to " + dlg.FileName + ".");
+        }
+    }
+
+    class ImportFavoritesMenuItem : NoValueTypeMenuItem
+    {
+        public ImportFavoritesMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Import Favorites List") { }
+        protected override void perform_the_no_value_action()
+        {
+            try
+            {
+                //Use a new thread so as not to block the UI thread
+                Thread t = new Thread(() => {
+                    import_favorites();
+                });
+
+                //Thread must be STA for the file dialogue to show
+                t.SetApartmentState(ApartmentState.STA);
+                t.Start();
+            }
+            catch
+            {
+            }
+        }
+
+        private void import_favorites()
+        {
+            XDocument xSettingsDoc;
+            IGame game;
+            int count = 0;
+
+            //Prompt for the backup file location
+            OpenFileDialog dlg = new OpenFileDialog();
+            dlg.CheckPathExists = true;
+            dlg.Title = "Choose the favorites file you want to import.";
+            dlg.ValidateNames = true;
+            dlg.Filter = "binary files|*.bin";
+            dlg.InitialDirectory = "C:\\Users\\Administrator\\Desktop";
+            DialogResult result = dlg.ShowDialog(ForegroundWindow.CurrentWindow);
+            if (result != DialogResult.OK) // Test result.
+            {
+                return;
+            }
+
+            my_parent.panelWait.Show();
+
+            try { xSettingsDoc = XDocument.Load(dlg.FileName); }
+            catch 
+            {
+                my_parent.panelWait.Hide();
+                MessageBox.Show(ForegroundWindow.CurrentWindow, "Invalid backup file.");
+                return;
+            }
+
+            XElement root = xSettingsDoc
+            .XPathSelectElement("/FavoritesBackup");
+
+            foreach(XElement fav in root.Descendants("Favorite"))
+            {
+                game = null;
+                game = PluginHelper.DataManager.GetGameById(fav.Element("GameId").Value);
+
+                if(game!= null)
+                {
+                    game.Favorite = true;
+                    count++;
+                }
+                else
+                {
+                    // There was no direct match for gameId but let's try one more time with <platform,title,filename>
+                    IPlatform platform = null;
+                    platform = PluginHelper.DataManager.GetPlatformByName(fav.Element("GamePlatform").Value);
+
+                    if(platform != null)
+                    {
+                        foreach(var platform_game in platform.GetAllGames(true, false))
+                        {
+                            if(platform_game.Title.Equals(fav.Element("GameTitle").Value) &&
+                                Path.GetFileName(platform_game.ApplicationPath).Equals(fav.Element("GameFileName").Value))
+                            {
+                                platform_game.Favorite = true;
+                                count++;
+                                break;
+                            }
+                        }   
+                    }
+                }
+            }
+
+            PluginHelper.DataManager.Save(true);
+
+            my_parent.panelWait.Hide();
+
+            MessageBox.Show(ForegroundWindow.CurrentWindow, "Imported " + count + " favorites from " + dlg.FileName + ".");
+
+        }
+    }
+
+
     class CancelMenuItem : NoValueTypeMenuItem
     {
         public CancelMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Cancel and Exit (updates will be discarded)") { }
 
-        protected override void perform_the_no_value_action() 
+        protected override void perform_the_no_value_action()
         {
             my_parent.apply_all_settings_and_exit(false);
         }
@@ -501,5 +679,30 @@ namespace OmegaSettingsMenu
         {
             my_parent.apply_all_settings_and_exit(true);
         }
+    }
+
+}
+
+
+
+
+class ForegroundWindow : IWin32Window
+{
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetForegroundWindow();
+
+    static ForegroundWindow obj = null;
+    public static ForegroundWindow CurrentWindow
+    {
+        get
+        {
+            if (obj == null)
+                obj = new ForegroundWindow();
+            return obj;
+        }
+    }
+    public IntPtr Handle
+    {
+        get { return GetForegroundWindow(); }
     }
 }
