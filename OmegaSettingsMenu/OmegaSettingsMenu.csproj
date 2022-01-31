@@ -73,6 +73,7 @@
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TheSystemMenuItem.cs" />
+    <Compile Include="Version.cs" />
     <EmbeddedResource Include="OmegaSettingsForm.resx">
       <DependentUpon>OmegaSettingsForm.cs</DependentUpon>
     </EmbeddedResource>
@@ -116,4 +117,8 @@
     <None Include="Resources\Omega.gif" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+  </PropertyGroup>
 </Project>
