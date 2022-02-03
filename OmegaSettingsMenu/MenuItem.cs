@@ -238,7 +238,50 @@ namespace OmegaSettingsMenu
         }
     }
 
-    class NoValueTypeMenuItem : MenuItem
+    class HideWheelTypeMenuItem : MenuItem
+    {
+        public HideWheelTypeMenuItem(OmegaSettingsForm parent, Point location, String name) : base(parent, location, name) { }
+
+        public override void add_values()
+        {
+            ValueList.Add("Show Playlist");
+            ValueList.Add("Hide Playlist Only");
+            ValueList.Add("Hide Playlist and Games");
+        }
+
+        public override void on_enter()
+        {
+            if (PluginHelper.StateManager.IsBigBox)
+            {
+                my_parent.restart_required = true;
+            }
+
+            base.on_enter();
+
+            my_parent.Tips.set_tips(this.get_tips());
+        }
+
+        public override String get_tips()
+        {
+            if (this.get_value().Equals("Show Playlist"))
+            {
+                return ("Games will be accessible from both this playlist and their platform wheels.");
+            }
+            else if (this.get_value().Equals("Hide Playlist Only"))
+            {
+                return ("Playlist will be hidden, but games will still be accessible from their platform wheels.");
+            }
+            else if (this.get_value().Equals("Hide Playlist and Games"))
+            {
+                return ("Playlist will be hidden, and games will also be hidden on their platform wheels.");
+            }
+            else
+                return "";
+        }
+
+    }
+
+        class NoValueTypeMenuItem : MenuItem
     {
         public NoValueTypeMenuItem(OmegaSettingsForm parent, Point location, String name) : base(parent, location, name) { }
 
@@ -377,9 +420,9 @@ namespace OmegaSettingsMenu
         }
     }
 
-    class AdultsOnlyGamesMenuItem : EnabledDisabledTypeMenuItem
+    class AdultsOnlyGamesMenuItem : HideWheelTypeMenuItem
     {
-        public AdultsOnlyGamesMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Adults Only Games") { }
+        public AdultsOnlyGamesMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Adults-Only Wheel") { }
 
         public override void apply_setting()
         {
@@ -397,45 +440,53 @@ namespace OmegaSettingsMenu
 
             if (thePlaylist != null)
             {
-                bool enable = this.get_value().Equals("Enabled");
+                Boolean hide_wheel;
+                Boolean hide_games;
 
-                // Just remove the playlist from the wheel instead of also hiding the games.
-                // At some point BigBox was updated so that Playlist.GetAllGames does not
-                // return hidden games. It will still work in LaunchBox only if 
-                // "view->hide games->marked hidden" is not checked.
-                /*                foreach (var game in thePlaylist.GetAllGames(false))
-                                {
-                                    game.Hide = !enable;
-                                }
-                */
+                if (this.get_value().Equals("Show Playlist"))
+                {
+                    hide_wheel = false;
+                    hide_games = false;
+                }
+                else if (this.get_value().Equals("Hide Playlist Only"))
+                {
+                    hide_wheel = true;
+                    hide_games = false;
+                }
+                else if (this.get_value().Equals("Hide Playlist and Games"))
+                {
+                    hide_wheel = true;
+                    hide_games = true;
+                }
+                else
+                {
+                    return;
+                }
 
-                thePlaylist.IncludeWithPlatforms = enable;
+                //Note that playlist.GetAllGames will not return hidden games,
+                //but playlist.GetAllPlaylistGames will return all games in the playlist.
+                foreach (var playlist_game in thePlaylist.GetAllPlaylistGames())
+                {
+                    IGame game = null;
+
+                    game = PluginHelper.DataManager.GetGameById(playlist_game.GameId);
+                    if(game != null)
+                        game.Hide = hide_games;
+                }
+
+                if (hide_wheel)
+                    thePlaylist.IncludeWithPlatforms = false;
+                else
+                    thePlaylist.IncludeWithPlatforms = true;
+
                 //Save & Refresh
                 PluginHelper.DataManager.Save();
                 if (PluginHelper.LaunchBoxMainViewModel != null)
                 {
                     PluginHelper.LaunchBoxMainViewModel.RefreshData();
                 }
-                PluginHelper.DataManager.ReloadIfNeeded();
             }
         }
-
-        public override void on_enter()
-        {
-            my_parent.Tips.set_tips("Note that a restart is required for this change to take effect.");
-            
-            if (PluginHelper.StateManager.IsBigBox == false)
-            {
-                PluginHelper.LaunchBoxMainViewModel.RefreshData();
-            }
-            else
-            {
-                my_parent.restart_required = true;
-            }
-
-            base.on_enter();
-        }
-
     }
 
 
