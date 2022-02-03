@@ -417,13 +417,22 @@ namespace OmegaSettingsMenu
                     PluginHelper.LaunchBoxMainViewModel.RefreshData();
                 }
                 PluginHelper.DataManager.ReloadIfNeeded();
-                //PluginHelper.DataManager.ForceReload();
             }
         }
 
         public override void on_enter()
         {
-            my_parent.Tips.set_tips("Note that a restart might be required before this change is reflected on the main Wheel.");
+            my_parent.Tips.set_tips("Note that a restart is required for this change to take effect.");
+            
+            if (PluginHelper.StateManager.IsBigBox == false)
+            {
+                PluginHelper.LaunchBoxMainViewModel.RefreshData();
+            }
+            else
+            {
+                my_parent.restart_required = true;
+            }
+
             base.on_enter();
         }
 
@@ -496,19 +505,21 @@ namespace OmegaSettingsMenu
         public BackupFavoritesMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Export Favorites List") { }
         protected override void perform_the_no_value_action()
         {
+            my_parent.show_status("Please Wait...");
             try
             {
                 //Use a new thread so as not to block the UI thread
                 Thread t = new Thread(() => {
                     backup_favorites();
                 });
-                
+
                 //Thread must be STA for the file dialogue to show
                 t.SetApartmentState(ApartmentState.STA);
                 t.Start();
             }
             catch
             {
+                my_parent.hide_status();
             }
         }
 
@@ -519,6 +530,7 @@ namespace OmegaSettingsMenu
 
             //Prompt for the backup file location
             SaveFileDialog dlg = new SaveFileDialog();
+            dlg.OverwritePrompt = true;
             dlg.CheckPathExists = true;
             dlg.Title = "Where do you want to save the backup file?";
             dlg.ValidateNames = true;
@@ -532,8 +544,6 @@ namespace OmegaSettingsMenu
             {
                 return;
             }
-
-            my_parent.panelWait.Show();
 
             //Add all favorites to our backup XML
             XElement FavoritesBackup = new XElement("FavoritesBackup");
@@ -562,9 +572,10 @@ namespace OmegaSettingsMenu
             xSettingsDoc.Add(FavoritesBackup);
             xSettingsDoc.Save(dlg.FileName);
 
-            my_parent.panelWait.Hide();
+            my_parent.show_status("Exported " + count + " favorites to " + dlg.FileName + ".");
+            Thread.Sleep(5000);
+            my_parent.hide_status();
 
-            MessageBox.Show(ForegroundWindow.CurrentWindow, "Exported " + count + " favorites to " + dlg.FileName + ".");
         }
     }
 
@@ -573,6 +584,7 @@ namespace OmegaSettingsMenu
         public ImportFavoritesMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Import Favorites List") { }
         protected override void perform_the_no_value_action()
         {
+            my_parent.show_status("Please Wait...");
             try
             {
                 //Use a new thread so as not to block the UI thread
@@ -586,6 +598,7 @@ namespace OmegaSettingsMenu
             }
             catch
             {
+                my_parent.hide_status();
             }
         }
 
@@ -608,13 +621,12 @@ namespace OmegaSettingsMenu
                 return;
             }
 
-            my_parent.panelWait.Show();
-
             try { xSettingsDoc = XDocument.Load(dlg.FileName); }
             catch 
             {
-                my_parent.panelWait.Hide();
-                MessageBox.Show(ForegroundWindow.CurrentWindow, "Invalid backup file.");
+                my_parent.show_status("Invalid backup file.");
+                Thread.Sleep(5);
+                my_parent.hide_status();
                 return;
             }
 
@@ -653,12 +665,21 @@ namespace OmegaSettingsMenu
                 }
             }
 
-            PluginHelper.DataManager.Save(true);
+            PluginHelper.DataManager.Save();
 
-            my_parent.panelWait.Hide();
+            if (PluginHelper.StateManager.IsBigBox == false)
+            {
+                PluginHelper.LaunchBoxMainViewModel.RefreshData();
+            }
+            else
+            {
+                my_parent.restart_required = true;
+            }
 
-            MessageBox.Show(ForegroundWindow.CurrentWindow, "Imported " + count + " favorites from " + dlg.FileName + ".");
-
+            my_parent.show_status("Imported " + count + " favorites from " + dlg.FileName + "." +
+                                                            "\r\nA restart is required for this change to take effect.");
+            Thread.Sleep(5000);
+            my_parent.hide_status();
         }
     }
 
@@ -669,6 +690,7 @@ namespace OmegaSettingsMenu
 
         protected override void perform_the_no_value_action()
         {
+            my_parent.restart_required = false;
             my_parent.apply_all_settings_and_exit(false);
         }
     }

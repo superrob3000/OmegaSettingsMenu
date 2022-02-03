@@ -31,6 +31,7 @@ namespace OmegaSettingsMenu
         {
             this.components = new System.ComponentModel.Container();
             this.panelWait = new System.Windows.Forms.Panel();
+            this.labelStatus = new System.Windows.Forms.Label();
             this.labelWait = new System.Windows.Forms.Label();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.timerExit = new System.Windows.Forms.Timer(this.components);
@@ -42,6 +43,7 @@ namespace OmegaSettingsMenu
             // 
             this.panelWait.BackColor = System.Drawing.Color.Black;
             this.panelWait.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.panelWait.Controls.Add(this.labelStatus);
             this.panelWait.Controls.Add(this.labelWait);
             this.panelWait.Controls.Add(this.pictureBox1);
             this.panelWait.ForeColor = System.Drawing.Color.White;
@@ -49,6 +51,19 @@ namespace OmegaSettingsMenu
             this.panelWait.Name = "panelWait";
             this.panelWait.Size = new System.Drawing.Size(600, 200);
             this.panelWait.TabIndex = 0;
+            // 
+            // labelStatus
+            // 
+            this.labelStatus.Dock = System.Windows.Forms.DockStyle.Top;
+            this.labelStatus.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.labelStatus.ForeColor = System.Drawing.Color.White;
+            this.labelStatus.Location = new System.Drawing.Point(0, 0);
+            this.labelStatus.Name = "labelStatus";
+            this.labelStatus.Size = new System.Drawing.Size(598, 91);
+            this.labelStatus.TabIndex = 2;
+            this.labelStatus.Text = "Imported favorites....";
+            this.labelStatus.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.labelStatus.Visible = false;
             // 
             // labelWait
             // 
@@ -108,6 +123,7 @@ namespace OmegaSettingsMenu
 
         public System.Windows.Forms.Panel panelWait;
         private System.Windows.Forms.Label labelWait;
+        private System.Windows.Forms.Label labelStatus;
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.Timer timerExit;
     }

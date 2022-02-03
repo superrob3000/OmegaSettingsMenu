@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -15,6 +16,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Xml.Linq;
 using System.Xml.XPath;
+using Unbroken.LaunchBox.Plugins;
 
 namespace OmegaSettingsMenu
 {
@@ -231,7 +233,11 @@ namespace OmegaSettingsMenu
             {
                 //Put up the Please Wait panel.
                 panel1.Hide();
+                labelStatus.Visible = false;
+                labelWait.Visible = true;
+                labelWait.BringToFront();
                 panelWait.Show();
+                panelWait.Refresh();
 
                 applying_settings = true;
                 timerExit.Enabled = true;
@@ -282,7 +288,33 @@ namespace OmegaSettingsMenu
             apply();
             save_values_to_xml();
 
+            PluginHelper.DataManager.Save(true);
+
             applying_settings = false;
+
+            if(this.restart_required)
+            {
+                //Start external program which kills and restarts BigBox.
+                Process ps_bigbox = null;
+                ps_bigbox = new Process();
+                ps_bigbox.StartInfo.UseShellExecute = false;
+                ps_bigbox.StartInfo.RedirectStandardInput = false;
+                ps_bigbox.StartInfo.RedirectStandardOutput = false;
+                ps_bigbox.StartInfo.CreateNoWindow = true;
+                ps_bigbox.StartInfo.UserName = null;
+                ps_bigbox.StartInfo.Password = null;
+                ps_bigbox.StartInfo.WindowStyle = ProcessWindowStyle.Normal;
+                ps_bigbox.StartInfo.FileName = Path.GetDirectoryName(Application.ExecutablePath).ToString() + "/../RebootBigBox.exe";
+
+                if (File.Exists(ps_bigbox.StartInfo.FileName))
+                {
+                    bool result = ps_bigbox.Start();
+                }
+                else
+                {
+                    MessageBox.Show(ForegroundWindow.CurrentWindow, "Missing " + ps_bigbox.StartInfo.FileName);
+                }
+            }
         }
 
         private void timerExit_Tick(object sender, EventArgs e)
@@ -294,6 +326,24 @@ namespace OmegaSettingsMenu
                 panelWait.Hide();
                 panel1.Show();
             }
+        }
+
+        public void show_status(String status)
+        {
+            labelStatus.Text = status;
+            labelWait.Visible = false;
+            labelStatus.Visible = true;
+            labelStatus.BringToFront();
+            panelWait.Show();
+            panelWait.Refresh();
+
+        }
+
+        public void hide_status()
+        {
+            panelWait.Hide();
+            labelStatus.Visible = false;
+            labelWait.Visible = true;
         }
 
         private void play_move()
@@ -366,6 +416,7 @@ namespace OmegaSettingsMenu
 
         private MenuLogo Logo;
         internal MenuTips Tips;
+        internal Boolean restart_required = false;
 
         private WMPLib.WindowsMediaPlayer MovePlayer = new WMPLib.WindowsMediaPlayer();
         public WMPLib.WindowsMediaPlayer SelectPlayer = new WMPLib.WindowsMediaPlayer();
