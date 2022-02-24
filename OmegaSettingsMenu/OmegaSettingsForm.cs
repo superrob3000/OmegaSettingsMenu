@@ -304,6 +304,7 @@ namespace OmegaSettingsMenu
                 ps_bigbox.StartInfo.UserName = null;
                 ps_bigbox.StartInfo.Password = null;
                 ps_bigbox.StartInfo.WindowStyle = ProcessWindowStyle.Normal;
+                ps_bigbox.StartInfo.Arguments = "\"(Rebooting BigBox to apply new settings)\"";
                 ps_bigbox.StartInfo.FileName = Path.GetDirectoryName(Application.ExecutablePath).ToString() + "/../RebootBigBox.exe";
 
                 if (File.Exists(ps_bigbox.StartInfo.FileName))
