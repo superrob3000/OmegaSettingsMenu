@@ -22,11 +22,12 @@ namespace OmegaSettingsMenu
 {
     public partial class OmegaSettingsForm : Form
     {
-        public OmegaSettingsForm(TheSystemMenuItem parent)
+        public OmegaSettingsForm(TheSystemMenuItem parent, MarqueeForm marquee)
         {
             InitializeComponent();
 
             this.my_parent = parent;
+            this.marquee_frm = marquee;
 
             this.Bounds = Screen.PrimaryScreen.Bounds;
 
@@ -250,6 +251,7 @@ namespace OmegaSettingsMenu
                 load_values_from_xml();
 
                 //Hide this form
+                marquee_frm.Hide();
                 this.Hide();
             }
 
@@ -323,6 +325,7 @@ namespace OmegaSettingsMenu
             if (applying_settings == false)
             {
                 this.timerExit.Enabled = false;
+                marquee_frm.Hide();
                 this.Hide();
                 panelWait.Hide();
                 panel1.Show();
@@ -447,6 +450,7 @@ namespace OmegaSettingsMenu
         }
 
         private TheSystemMenuItem my_parent;
+        public MarqueeForm marquee_frm;
 
         private bool applying_settings = false;
         private String xml_path;

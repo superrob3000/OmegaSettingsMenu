@@ -317,6 +317,17 @@ namespace OmegaSettingsMenu
     {
         public MarqueeWidthMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Marquee Width"){ }
 
+        public override void on_left()
+        {
+            base.on_left();
+            my_parent.marquee_frm.update_marquee_width(get_value());
+        }
+        public override void on_right()
+        {
+            base.on_right();
+            my_parent.marquee_frm.update_marquee_width(get_value());
+        }
+
         public override string get_default_value() { return "1920"; }
     }
 
@@ -324,6 +335,17 @@ namespace OmegaSettingsMenu
     class MarqueeHeightMenuItem : CounterTypeMenuItem
     {
         public MarqueeHeightMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Marquee Height") { }
+
+        public override void on_left()
+        {
+            base.on_left();
+            my_parent.marquee_frm.update_marquee_height(get_value());
+        }
+        public override void on_right()
+        {
+            base.on_right();
+            my_parent.marquee_frm.update_marquee_height(get_value());
+        }
 
         public override string get_default_value() { return "340"; }
     }
@@ -337,7 +359,13 @@ namespace OmegaSettingsMenu
             ValueList.Add("Fill");
             ValueList.Add("Preserve Aspect Ratio (Horton Style)");
         }
-    }
+
+        public override void on_enter()
+        {
+            base.on_enter();
+            my_parent.marquee_frm.update_marquee_stretch(get_value());
+        }
+     }
 
     class MarqueeVerticalAlignmentMenuItem : MenuItem
     {
@@ -347,6 +375,12 @@ namespace OmegaSettingsMenu
         {
             ValueList.Add("Top");
             ValueList.Add("Center");
+        }
+
+        public override void on_enter()
+        {
+            base.on_enter();
+            my_parent.marquee_frm.update_marquee_vertical_alignment(get_value());
         }
     }
 
