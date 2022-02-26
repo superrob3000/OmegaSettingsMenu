@@ -139,6 +139,9 @@ namespace OmegaSettingsMenu
 
         public void update_marquee(double width, double height, System.Windows.Media.Stretch stretch, VerticalAlignment verticalAlignment)
         {
+            if(!marquee_enabled)
+                return;
+
             if ((width != MarqueeWidth) || (height != MarqueeHeight) || (verticalAlignment != MarqueeVerticalAlignment))
             {
                 ///Set size and location of this form
