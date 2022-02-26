@@ -42,9 +42,9 @@ namespace OmegaSettingsMenu
             
             set_screen_number();
 
-            //Set default values (these will be updated before the form is shown)
-            MarqueeHeight = 540;
-            MarqueeWidth = 1800;
+            //Set default invalid values (these will be updated before the form is shown)
+            MarqueeHeight = 1;
+            MarqueeWidth = 1;
             MarqueeStretch = System.Windows.Media.Stretch.None;
             MarqueeVerticalAlignment = VerticalAlignment.Bottom;
         }
