@@ -44,7 +44,7 @@
             this.pictureBox1.Location = new System.Drawing.Point(0, 0);
             this.pictureBox1.Margin = new System.Windows.Forms.Padding(0);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(1080, 325);
+            this.pictureBox1.Size = new System.Drawing.Size(1800, 540);
             this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pictureBox1.TabIndex = 0;
             this.pictureBox1.TabStop = false;
@@ -57,7 +57,7 @@
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Margin = new System.Windows.Forms.Padding(0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(10, 450);
+            this.panel1.Size = new System.Drawing.Size(10, 540);
             this.panel1.TabIndex = 1;
             // 
             // panel2
@@ -68,7 +68,7 @@
             this.panel2.Location = new System.Drawing.Point(10, 0);
             this.panel2.Margin = new System.Windows.Forms.Padding(0);
             this.panel2.Name = "panel2";
-            this.panel2.Size = new System.Drawing.Size(790, 10);
+            this.panel2.Size = new System.Drawing.Size(1790, 10);
             this.panel2.TabIndex = 2;
             // 
             // panel3
@@ -76,10 +76,10 @@
             this.panel3.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.panel3.BackColor = System.Drawing.Color.WhiteSmoke;
             this.panel3.Dock = System.Windows.Forms.DockStyle.Right;
-            this.panel3.Location = new System.Drawing.Point(790, 10);
+            this.panel3.Location = new System.Drawing.Point(1790, 10);
             this.panel3.Margin = new System.Windows.Forms.Padding(0);
             this.panel3.Name = "panel3";
-            this.panel3.Size = new System.Drawing.Size(10, 440);
+            this.panel3.Size = new System.Drawing.Size(10, 530);
             this.panel3.TabIndex = 2;
             // 
             // panel4
@@ -87,10 +87,10 @@
             this.panel4.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
             this.panel4.BackColor = System.Drawing.Color.WhiteSmoke;
             this.panel4.Dock = System.Windows.Forms.DockStyle.Bottom;
-            this.panel4.Location = new System.Drawing.Point(10, 440);
+            this.panel4.Location = new System.Drawing.Point(10, 530);
             this.panel4.Margin = new System.Windows.Forms.Padding(0);
             this.panel4.Name = "panel4";
-            this.panel4.Size = new System.Drawing.Size(780, 10);
+            this.panel4.Size = new System.Drawing.Size(1780, 10);
             this.panel4.TabIndex = 3;
             // 
             // MarqueeForm
@@ -98,18 +98,20 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.Black;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(1800, 540);
             this.ControlBox = false;
             this.Controls.Add(this.panel4);
             this.Controls.Add(this.panel3);
             this.Controls.Add(this.panel2);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.pictureBox1);
+            this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.Name = "MarqueeForm";
             this.ShowIcon = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "MarqueeForm";
+            this.TopMost = true;
             this.Shown += new System.EventHandler(this.MarqueeForm_Shown);
             this.VisibleChanged += new System.EventHandler(this.MarqueeForm_VisibleChanged);
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();

@@ -100,6 +100,7 @@ namespace OmegaSettingsMenu
             this.ClientSize = new System.Drawing.Size(1920, 1080);
             this.ControlBox = false;
             this.Controls.Add(this.panelWait);
+            this.DoubleBuffered = true;
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.KeyPreview = true;
             this.MaximizeBox = false;
@@ -107,7 +108,7 @@ namespace OmegaSettingsMenu
             this.Name = "OmegaSettingsForm";
             this.ShowIcon = false;
             this.SizeGripStyle = System.Windows.Forms.SizeGripStyle.Hide;
-            this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
+            this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "Omega Settings";
             this.TopMost = true;
             this.TransparencyKey = System.Drawing.Color.LawnGreen;
