@@ -29,7 +29,8 @@ namespace OmegaSettingsMenu
             this.my_parent = parent;
             this.marquee_frm = marquee;
 
-            this.Bounds = Screen.PrimaryScreen.Bounds;
+            this.set_screen_number();
+            this.Bounds = primary_screen.Bounds;
 
             // 
             // panel1
@@ -147,6 +148,41 @@ namespace OmegaSettingsMenu
         /****************************************************************
          ****************************************************************
          ****************************************************************/
+
+        public void set_screen_number()
+        {
+            uint dpiX, dpiY;
+            try
+            {
+                //Get BigBox settings from XML file
+                string xml_path = Path.GetDirectoryName(Application.ExecutablePath).ToString() + "/Data/BigBoxSettings.xml";
+                XDocument xSettingsDoc;
+                xSettingsDoc = XDocument.Load(xml_path);
+
+                String PrimaryMonitorIndex = xSettingsDoc
+                .XPathSelectElement("/LaunchBox/BigBoxSettings")
+                .Element("PrimaryMonitorIndex")
+                .Value;
+
+                if ((Convert.ToInt32(PrimaryMonitorIndex) < 0) || (Convert.ToInt32(PrimaryMonitorIndex) > Screen.AllScreens.GetUpperBound(0)))
+                {
+                    primary_screen = Screen.PrimaryScreen;
+                }
+                else
+                {
+                    primary_screen = Screen.AllScreens[Convert.ToInt32(PrimaryMonitorIndex)];
+                }
+            }
+            catch
+            {
+                primary_screen = Screen.PrimaryScreen;
+            }
+
+            ScreenExtensions.GetDpi(primary_screen, DpiType.Effective, out dpiX, out dpiY);
+            ScalingFactorX = (double)dpiX / (double)96;
+            ScalingFactorY = (double)dpiY / (double)96;
+        }
+
         private void load_values_from_xml()
         {
             if (xSettingsDoc == null)
@@ -414,6 +450,10 @@ namespace OmegaSettingsMenu
         private int stride = 80; //default stride
         private int border_spacing = 3;
 
+        Screen primary_screen;
+        double ScalingFactorX;
+        double ScalingFactorY;
+
         private List<MenuBorder> BorderList = new List<MenuBorder>();
         private List<MenuItem> ItemList = new List<MenuItem>();
         private int ItemIndex = 0;
@@ -455,7 +495,7 @@ namespace OmegaSettingsMenu
         private bool applying_settings = false;
         private String xml_path;
         XDocument xSettingsDoc;
-
+        
         private void panel1_Paint(object sender, PaintEventArgs e)
         {
             Graphics g = e.Graphics;
