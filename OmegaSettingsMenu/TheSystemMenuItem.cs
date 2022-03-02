@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Forms;
 using Unbroken.LaunchBox.Plugins;
 using Unbroken.LaunchBox.Plugins.Data;
+using Application = System.Windows.Forms.Application;
 
 namespace OmegaSettingsMenu
 {
@@ -94,4 +91,55 @@ namespace OmegaSettingsMenu
         public static System.Windows.Media.Stretch Stretch = new System.Windows.Media.Stretch();
         public static VerticalAlignment VerticalAlignment;
     }
+
+    //Helper class to get video file marquee paths from xaml
+    public class VideoMarqueePathConverter : System.Windows.Data.IMultiValueConverter
+    {
+        public string Type { get; set; } = string.Empty;
+        public object Convert(object[] values, Type targetType, object parameter, System.Globalization.CultureInfo culture)
+        {
+            string filename = string.Empty;
+            string[] extensions = new string[] {".mov",".mp4",".m4p",".m4v",".wmv",".avi",".mpg",".mpeg",".flv"};
+
+            string platform = (values[0] == null) ? string.Empty : values[0].ToString();
+            string game = ((Type != "Game")||(values[1] == null)) ? string.Empty : values[1].ToString();
+
+            if (platform != string.Empty)
+            {
+                if (game == string.Empty)
+                {
+                    IPlatform p = PluginHelper.DataManager.GetPlatformByName(platform);
+                    if (p != null)
+                    {
+                        /* Platform video marquee */
+                        filename = Directory.GetParent(Path.GetDirectoryName(Application.ExecutablePath)).ToString() + "/Videos/Platforms/Marquee/" + platform;
+                    }
+                    else
+                    {
+                        /* Couldn't find the platform. Assume it's a playlist video marquee. */
+                        filename = Directory.GetParent(Path.GetDirectoryName(Application.ExecutablePath)).ToString() + "/Videos/Playlists/Marquee/" + platform;
+                    }
+                }
+                else
+                {
+                    /* Game video marquee */
+                    filename = Directory.GetParent(Path.GetDirectoryName(Application.ExecutablePath)).ToString() + "/Videos/" + platform + "/Marquee/" + game;
+                }
+
+                for (int index = 0; index < extensions.Length; index++)
+                {
+                    if (File.Exists(filename + extensions[index]))
+                        return new Uri(filename + extensions[index]);
+                }
+            }
+            return new Uri("about:blank");
+        }
+
+        public object[] ConvertBack(object value, Type[] targetTypes, object parameter, System.Globalization.CultureInfo culture)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }
+
+
