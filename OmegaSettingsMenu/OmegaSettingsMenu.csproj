@@ -57,8 +57,9 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
-    <Reference Include="Unbroken.LaunchBox.Plugins">
-      <HintPath>C:\Users\Administrator\LaunchBox\Core\Unbroken.LaunchBox.Plugins.dll</HintPath>
+    <Reference Include="Unbroken.LaunchBox.Plugins, Version=12.9.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\..\Administrator\LaunchBox\Core\Unbroken.LaunchBox.Plugins.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>

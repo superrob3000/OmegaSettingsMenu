@@ -76,8 +76,8 @@ namespace OmegaSettingsMenu
             ItemList.Add(new MarqueeVerticalAlignmentMenuItem(this, new_offset()));
             ItemList.Add(new ScanlinesMenuItem(this, new_offset()));
             ItemList.Add(new AdultsOnlyGamesMenuItem(this, new_offset()));
-            ItemList.Add(new BackupFavoritesMenuItem(this, new_offset()));
-            ItemList.Add(new ImportFavoritesMenuItem(this, new_offset()));
+            ItemList.Add(new BackupMenuItem(this, new_offset()));
+            ItemList.Add(new ImportBackupMenuItem(this, new_offset()));
             ItemList.Add(new CancelMenuItem(this, new_offset()));
             ItemList.Add(new ExitMenuItem(this, new_offset()));
             
