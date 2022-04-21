@@ -631,6 +631,12 @@ namespace OmegaSettingsMenu
                         //Create a Omega Backup Folder to store all settings
                         string strDestPath = dlg.SelectedPath;
                         string strDestFolder = strDestPath + "/Omega Backup";
+                        
+                        //If there's already a Omega Backup folder on the destination drive, Trash that Bitch!
+                        if (!Directory.Exists(strDestPath))
+                        {
+                            Directory.Delete(strDestPath);
+                        }
                         Directory.CreateDirectory(strDestFolder);
 
                         //Backup Favorites 
@@ -643,7 +649,7 @@ namespace OmegaSettingsMenu
                         backup_Ledblinky(strDestFolder);
 
                         //Backup High Scores
-
+                        backup_Mame_High_Scores(strDestFolder);
 
                         //Backup Startup Video & Marquee
 
@@ -698,7 +704,7 @@ namespace OmegaSettingsMenu
             xSettingsDoc.Add(FavoritesBackup);
             xSettingsDoc.Save(destFileName);
 
-            my_parent.show_status("Exported " + count + " favorites");
+            my_parent.show_status("Exported " + count + " favorites... Now backing up Bigbox license");
             Thread.Sleep(5000);
 
         }
@@ -712,7 +718,7 @@ namespace OmegaSettingsMenu
                 File.Delete(destFileName);
             System.IO.File.Copy(fileToCopy, destFileName, true);
             
-            my_parent.show_status("Exported Bigbox license");
+            my_parent.show_status("Exported Bigbox license... Now backing up Ledblinky");
             Thread.Sleep(5000);
 
         }
@@ -728,10 +734,27 @@ namespace OmegaSettingsMenu
             //Copy all the files and subdirectories in Ledblinky folder
             CopyAll(diSource, diTarget);
 
-            my_parent.show_status("Exported LedBlinky folder");
+            my_parent.show_status("Exported LedBlinky folder... Now backing up Mame High Scores");
             Thread.Sleep(5000);
 
         }
+        private void backup_Mame_High_Scores(string destPath)
+        {
+            string sourcePath = @"C:\Users\Administrator\LaunchBox\Emulators\Mame\nvram";
+            string destFileLocation = destPath + "/nvram";
+
+            //Save folder to location
+            var diSource = new DirectoryInfo(sourcePath);
+            var diTarget = new DirectoryInfo(destFileLocation);
+
+            //Copy all the mame game nvram folders and files
+            CopyAll(diSource, diTarget);
+
+            my_parent.show_status("Exported Mame High Scores... Backup Complete!");
+            Thread.Sleep(5000);
+
+        }
+
         public static void CopyAll(DirectoryInfo source, DirectoryInfo target)
         {
             Directory.CreateDirectory(target.FullName);
