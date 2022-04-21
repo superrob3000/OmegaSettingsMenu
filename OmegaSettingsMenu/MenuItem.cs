@@ -585,9 +585,9 @@ namespace OmegaSettingsMenu
 
 
 
-    class BackupFavoritesMenuItem : NoValueTypeMenuItem
+    class BackupMenuItem : NoValueTypeMenuItem
     {
-        public BackupFavoritesMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Export Favorites List") { }
+        public BackupMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Backup Omega Content") { }
         protected override void perform_the_no_value_action()
         {
             my_parent.show_status("Please Wait...");
@@ -595,7 +595,54 @@ namespace OmegaSettingsMenu
             {
                 //Use a new thread so as not to block the UI thread
                 Thread t = new Thread(() => {
-                    backup_favorites();
+
+                    //****************** Robert's code using SaveFileDialog - No Longer Using **************************
+                    //****************** Now just having them pick the drive/folder location ***************************
+
+                    //Create save dialog to pass to all the backup routines
+                    //Prompt for the backup file location
+                    //SaveFileDialog dlg = new SaveFileDialog();
+                    //dlg.ValidateNames = true;
+                    //dlg.InitialDirectory = "C:\\Users\\Administrator\\Desktop";
+                    //dlg.Filter = "binary files|*.bin";
+                    //dlg.AddExtension = true;
+                    //dlg.DefaultExt = ".bin";
+                    //dlg.FileName = "favorites_backup.bin";
+                    //DialogResult result = dlg.ShowDialog(ForegroundWindow.CurrentWindow);
+                    //if (result != DialogResult.OK) // Test result.
+                    //{
+                    //    return;
+                    //}
+                    
+                    //**************************************************************************************************
+
+
+                    //Dialog box to choose folder destination for backups
+                    var dlg = new FolderBrowserDialog();
+
+                    DialogResult srcFolder = dlg.ShowDialog(ForegroundWindow.CurrentWindow);
+                    
+                    if (srcFolder != DialogResult.OK && !string.IsNullOrWhiteSpace(dlg.SelectedPath))
+                    {
+                        return;
+                    }
+                    else { 
+                    //Backup Favorites 
+                    backup_favorites(dlg.SelectedPath);
+
+                    //Backup Bigbox License
+                    backup_bigbox_license(dlg.SelectedPath);
+
+                    //Backup Ledblinky
+                    backup_Ledblinky(dlg.SelectedPath);
+
+                    //Backup High Scores
+
+
+                    //Backup Startup Video & Marquee
+
+
+                    }
                 });
 
                 //Thread must be STA for the file dialogue to show
@@ -608,27 +655,12 @@ namespace OmegaSettingsMenu
             }
         }
 
-        private void backup_favorites()
+        private void backup_favorites(string destPath)
         {
+
+            string destFileName = destPath + "/favorites_backup.bin";
             XDocument xSettingsDoc;
             int count = 0;
-
-            //Prompt for the backup file location
-            SaveFileDialog dlg = new SaveFileDialog();
-            dlg.OverwritePrompt = true;
-            dlg.CheckPathExists = true;
-            dlg.Title = "Where do you want to save the backup file?";
-            dlg.ValidateNames = true;
-            dlg.Filter = "binary files|*.bin";
-            dlg.AddExtension = true;
-            dlg.DefaultExt = ".bin";
-            dlg.InitialDirectory = "C:\\Users\\Administrator\\Desktop";
-            dlg.FileName = "favorites_backup.bin";
-            DialogResult result = dlg.ShowDialog(ForegroundWindow.CurrentWindow);
-            if (result != DialogResult.OK) // Test result.
-            {
-                return;
-            }
 
             //Add all favorites to our backup XML
             XElement FavoritesBackup = new XElement("FavoritesBackup");
@@ -655,18 +687,69 @@ namespace OmegaSettingsMenu
                 File.Delete(dlg.FileName);
             xSettingsDoc = new XDocument();
             xSettingsDoc.Add(FavoritesBackup);
-            xSettingsDoc.Save(dlg.FileName);
+            xSettingsDoc.Save(destFileName);
 
-            my_parent.show_status("Exported " + count + " favorites to " + dlg.FileName + ".");
+            my_parent.show_status("Exported " + count + " favorites to " + destFileName + ".");
+            Thread.Sleep(5000);
+            my_parent.hide_status();
+
+        }
+        private void backup_bigbox_license(string destPath)
+        {
+            string fileToCopy = @"C:\Users\Administrator\LaunchBox\License.xml";
+            string destFileName = destPath + "/License.xml";
+
+            //Save file to location
+            if (File.Exists(destFileName))
+                File.Delete(destFileName);
+            System.IO.File.Copy(fileToCopy, destFileName, true);
+            
+            my_parent.show_status("Exported Bigbox license to " + destFileName + ".");
+            Thread.Sleep(5000);
+            my_parent.hide_status();
+
+        }
+        private void backup_Ledblinky(string destPath)
+        {
+            string fileName = "";
+            string sourcePath = @"C:\Users\Administrator\LaunchBox\LEDBlinky";
+            string destFileLocation = destPath + "LEDBlinky";
+            string destFolderLocation = destFileLocation;
+            
+            // Use Path class to manipulate file and directory paths.
+            string sourceFile = System.IO.Path.Combine(sourcePath, fileName);
+            string destFileName = System.IO.Path.Combine(destFileLocation, fileName);
+
+
+            //Save folder to location
+            if (System.IO.Directory.Exists(sourcePath))
+            {
+                string[] files = System.IO.Directory.GetFiles(sourcePath);
+
+                // Copy the files and overwrite destination files if they already exist.
+                foreach (string s in files)
+                {
+                    // Use static Path methods to extract only the file name from the path.
+                    fileName = System.IO.Path.GetFileName(s);
+                    destFileLocation = System.IO.Path.Combine(destFileLocation, fileName);
+                    System.IO.File.Copy(s, destFileLocation, true);
+                }
+            }
+            else
+            {
+                Console.WriteLine("Source path does not exist!");
+            }
+
+            my_parent.show_status("Exported LedBlinky folder to " + destFolderLocation + ".");
             Thread.Sleep(5000);
             my_parent.hide_status();
 
         }
     }
 
-    class ImportFavoritesMenuItem : NoValueTypeMenuItem
+    class ImportBackupMenuItem : NoValueTypeMenuItem
     {
-        public ImportFavoritesMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Import Favorites List") { }
+        public ImportBackupMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Import Favorites List") { }
         protected override void perform_the_no_value_action()
         {
             my_parent.show_status("Please Wait...");
