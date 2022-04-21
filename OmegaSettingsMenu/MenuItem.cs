@@ -626,21 +626,30 @@ namespace OmegaSettingsMenu
                     {
                         return;
                     }
-                    else { 
-                    //Backup Favorites 
-                    backup_favorites(dlg.SelectedPath);
+                    else {
 
-                    //Backup Bigbox License
-                    backup_bigbox_license(dlg.SelectedPath);
+                        //Create a Omega Backup Folder to store all settings
+                        string strDestPath = dlg.SelectedPath;
+                        string strDestFolder = strDestPath + "/Omega Backup";
+                        Directory.CreateDirectory(strDestFolder);
 
-                    //Backup Ledblinky
-                    backup_Ledblinky(dlg.SelectedPath);
+                        //Backup Favorites 
+                        backup_favorites(strDestFolder);
 
-                    //Backup High Scores
+                        //Backup Bigbox License
+                        backup_bigbox_license(strDestFolder);
+
+                        //Backup Ledblinky
+                        backup_Ledblinky(strDestFolder);
+
+                        //Backup High Scores
 
 
-                    //Backup Startup Video & Marquee
+                        //Backup Startup Video & Marquee
 
+
+                        //Close the status window
+                        my_parent.hide_status();
 
                     }
                 });
@@ -683,15 +692,14 @@ namespace OmegaSettingsMenu
             }
 
             //Write the backup XML file
-            if (File.Exists(dlg.FileName))
-                File.Delete(dlg.FileName);
+            if (File.Exists(destFileName))
+                File.Delete(destFileName);
             xSettingsDoc = new XDocument();
             xSettingsDoc.Add(FavoritesBackup);
             xSettingsDoc.Save(destFileName);
 
-            my_parent.show_status("Exported " + count + " favorites to " + destFileName + ".");
+            my_parent.show_status("Exported " + count + " favorites");
             Thread.Sleep(5000);
-            my_parent.hide_status();
 
         }
         private void backup_bigbox_license(string destPath)
@@ -704,46 +712,44 @@ namespace OmegaSettingsMenu
                 File.Delete(destFileName);
             System.IO.File.Copy(fileToCopy, destFileName, true);
             
-            my_parent.show_status("Exported Bigbox license to " + destFileName + ".");
+            my_parent.show_status("Exported Bigbox license");
             Thread.Sleep(5000);
-            my_parent.hide_status();
 
         }
         private void backup_Ledblinky(string destPath)
         {
-            string fileName = "";
-            string sourcePath = @"C:\Users\Administrator\LaunchBox\LEDBlinky";
-            string destFileLocation = destPath + "LEDBlinky";
-            string destFolderLocation = destFileLocation;
-            
-            // Use Path class to manipulate file and directory paths.
-            string sourceFile = System.IO.Path.Combine(sourcePath, fileName);
-            string destFileName = System.IO.Path.Combine(destFileLocation, fileName);
-
-
+            string sourcePath = @"C:\Users\Administrator\LaunchBox\Tools\LEDBlinky";
+            string destFileLocation = destPath + "/LEDBlinky";
+                        
             //Save folder to location
-            if (System.IO.Directory.Exists(sourcePath))
-            {
-                string[] files = System.IO.Directory.GetFiles(sourcePath);
+            var diSource = new DirectoryInfo(sourcePath);
+            var diTarget = new DirectoryInfo(destFileLocation);
+            
+            //Copy all the files and subdirectories in Ledblinky folder
+            CopyAll(diSource, diTarget);
 
-                // Copy the files and overwrite destination files if they already exist.
-                foreach (string s in files)
-                {
-                    // Use static Path methods to extract only the file name from the path.
-                    fileName = System.IO.Path.GetFileName(s);
-                    destFileLocation = System.IO.Path.Combine(destFileLocation, fileName);
-                    System.IO.File.Copy(s, destFileLocation, true);
-                }
-            }
-            else
-            {
-                Console.WriteLine("Source path does not exist!");
-            }
-
-            my_parent.show_status("Exported LedBlinky folder to " + destFolderLocation + ".");
+            my_parent.show_status("Exported LedBlinky folder");
             Thread.Sleep(5000);
-            my_parent.hide_status();
 
+        }
+        public static void CopyAll(DirectoryInfo source, DirectoryInfo target)
+        {
+            Directory.CreateDirectory(target.FullName);
+
+            // Copy each file into the new directory.
+            foreach (FileInfo fi in source.GetFiles())
+            {
+                Console.WriteLine(@"Copying {0}\{1}", target.FullName, fi.Name);
+                fi.CopyTo(Path.Combine(target.FullName, fi.Name), true);
+            }
+
+            // Copy each subdirectory using recursion.
+            foreach (DirectoryInfo diSourceSubDir in source.GetDirectories())
+            {
+                DirectoryInfo nextTargetSubDir =
+                    target.CreateSubdirectory(diSourceSubDir.Name);
+                CopyAll(diSourceSubDir, nextTargetSubDir);
+            }
         }
     }
 
