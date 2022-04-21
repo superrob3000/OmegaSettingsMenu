@@ -632,11 +632,13 @@ namespace OmegaSettingsMenu
                         string strDestPath = dlg.SelectedPath;
                         string strDestFolder = strDestPath + "/Omega Backup";
                         
-                        //If there's already a Omega Backup folder on the destination drive, Trash that Bitch!
+                        //If there's already a Omega Backup folder on the destination drive, Trash that Shit!
                         if (!Directory.Exists(strDestPath))
                         {
                             Directory.Delete(strDestPath);
                         }
+                        
+                        //Create a fresh Omega Backup folder
                         Directory.CreateDirectory(strDestFolder);
 
                         //Backup Favorites 
@@ -649,10 +651,10 @@ namespace OmegaSettingsMenu
                         backup_Ledblinky(strDestFolder);
 
                         //Backup High Scores
-                        backup_Mame_High_Scores(strDestFolder);
+                        backup_mame_high_scores(strDestFolder);
 
                         //Backup Startup Video & Marquee
-
+                        backup_intro_media(strDestFolder);
 
                         //Close the status window
                         my_parent.hide_status();
@@ -738,7 +740,7 @@ namespace OmegaSettingsMenu
             Thread.Sleep(5000);
 
         }
-        private void backup_Mame_High_Scores(string destPath)
+        private void backup_mame_high_scores(string destPath)
         {
             string sourcePath = @"C:\Users\Administrator\LaunchBox\Emulators\Mame\nvram";
             string destFileLocation = destPath + "/nvram";
@@ -750,7 +752,33 @@ namespace OmegaSettingsMenu
             //Copy all the mame game nvram folders and files
             CopyAll(diSource, diTarget);
 
-            my_parent.show_status("Exported Mame High Scores... Backup Complete!");
+            my_parent.show_status("Exported Mame High Scores... Now backing up Intro Marquee & Video");
+            Thread.Sleep(5000);
+
+        }
+        private void backup_intro_media(string destPath)
+        {
+            string destFolder = destPath + "/Intro Media";
+            string srcIntroMarquee = @"C:\Users\Administrator\LaunchBox\License.xml";
+            string srcIntroVideo = @"C:\Users\Administrator\LaunchBox\License.xml";
+            string destIntroMarqueeFileName = destPath + "";
+            string destIntroVideoFileName = destPath + "";
+           
+
+            //Create folder to store intro media in on the Omega Backup directory
+            Directory.CreateDirectory(destFolder);
+
+            //Save Intro Marquee Video
+            if (File.Exists(destIntroMarqueeFileName))
+                File.Delete(destIntroMarqueeFileName);
+            System.IO.File.Copy(srcIntroMarquee, destIntroMarqueeFileName, true);
+
+            //Save Intro Marquee Video
+            if (File.Exists(destIntroVideoFileName))
+                File.Delete(destIntroVideoFileName);
+            System.IO.File.Copy(srcIntroVideo, destIntroVideoFileName, true);
+
+            my_parent.show_status("Exported Intro Marquee & Video... Now backing up Mame Stable Device Ids");
             Thread.Sleep(5000);
 
         }
