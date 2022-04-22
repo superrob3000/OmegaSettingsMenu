@@ -619,6 +619,7 @@ namespace OmegaSettingsMenu
 
                     //Dialog box to choose folder destination for backups
                     var dlg = new FolderBrowserDialog();
+                    dlg.Description = "Select the USB drive to save your Omega Backup to";
 
                     DialogResult srcFolder = dlg.ShowDialog(ForegroundWindow.CurrentWindow);
                     
@@ -655,6 +656,9 @@ namespace OmegaSettingsMenu
 
                         //Backup Startup Video & Marquee
                         backup_intro_media(strDestFolder);
+
+                        //Backup Startup Video & Marquee
+                        backup_mame_stableIDs(strDestFolder);
 
                         //Close the status window
                         my_parent.hide_status();
@@ -752,33 +756,47 @@ namespace OmegaSettingsMenu
             //Copy all the mame game nvram folders and files
             CopyAll(diSource, diTarget);
 
-            my_parent.show_status("Exported Mame High Scores... Now backing up Intro Marquee & Video");
+            my_parent.show_status("Exported Mame High Scores... Now backing up Intro Marquee and Startup Video");
             Thread.Sleep(5000);
 
         }
         private void backup_intro_media(string destPath)
         {
             string destFolder = destPath + "/Intro Media";
-            string srcIntroMarquee = @"C:\Users\Administrator\LaunchBox\License.xml";
-            string srcIntroVideo = @"C:\Users\Administrator\LaunchBox\License.xml";
-            string destIntroMarqueeFileName = destPath + "";
-            string destIntroVideoFileName = destPath + "";
-           
+            string srcIntroMarquee = @"C:\Users\Administrator\LaunchBox\Videos\StartupMarquee";
+            string srcIntroVideo = @"C:\Users\Administrator\LaunchBox\Videos\startup.mp4";
+            string destIntroMarqueeLocation = destFolder + "/StartupMarquee";
+            string destIntroVideoFileName = destFolder + "/startup.mp4";
+
+            var diIntroMarqueeIntro = new DirectoryInfo(srcIntroMarquee);
+            var diTarget = new DirectoryInfo(destIntroMarqueeLocation);
+
 
             //Create folder to store intro media in on the Omega Backup directory
             Directory.CreateDirectory(destFolder);
 
-            //Save Intro Marquee Video
-            if (File.Exists(destIntroMarqueeFileName))
-                File.Delete(destIntroMarqueeFileName);
-            System.IO.File.Copy(srcIntroMarquee, destIntroMarqueeFileName, true);
-
-            //Save Intro Marquee Video
-            if (File.Exists(destIntroVideoFileName))
-                File.Delete(destIntroVideoFileName);
+            //Save Intro Video
             System.IO.File.Copy(srcIntroVideo, destIntroVideoFileName, true);
 
+            //Copy the Startup Marquee folder
+            CopyAll(diIntroMarqueeIntro, diTarget);
+
             my_parent.show_status("Exported Intro Marquee & Video... Now backing up Mame Stable Device Ids");
+            Thread.Sleep(5000);
+
+        }
+
+        private void backup_mame_stableIDs(string destPath)
+        {
+            string fileToCopy = @"C:\Users\Administrator\LaunchBox\Emulators\MAME\ctrlr\xarcade.cfg";
+            string destFileName = destPath + "/xarcade.cfg";
+
+            //Save file to location
+            if (File.Exists(destFileName))
+                File.Delete(destFileName);
+            System.IO.File.Copy(fileToCopy, destFileName, true);
+
+            my_parent.show_status("Exported Stable Device IDs... Backup Complete... ALL HAIL OMEGA!!!");
             Thread.Sleep(5000);
 
         }
@@ -806,7 +824,7 @@ namespace OmegaSettingsMenu
 
     class ImportBackupMenuItem : NoValueTypeMenuItem
     {
-        public ImportBackupMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Import Favorites List") { }
+        public ImportBackupMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Import Omega Backup") { }
         protected override void perform_the_no_value_action()
         {
             my_parent.show_status("Please Wait...");
@@ -814,7 +832,44 @@ namespace OmegaSettingsMenu
             {
                 //Use a new thread so as not to block the UI thread
                 Thread t = new Thread(() => {
-                    import_favorites();
+                    //Dialog box to choose folder destination for backups
+                    var dlg = new FolderBrowserDialog();
+                    dlg.Description = "Select your Omega Backup folder";
+
+                    DialogResult destFolder = dlg.ShowDialog(ForegroundWindow.CurrentWindow);
+
+                    if (destFolder != DialogResult.OK && !string.IsNullOrWhiteSpace(dlg.SelectedPath))
+                    {
+                        return;
+                    }
+                    else
+                    {
+
+                        //Set the source folder
+                        string strDestFolder = dlg.SelectedPath;
+
+                        //Restore Favorites 
+                        //import_favorites(strDestFolder);
+
+                        //Restore Bigbox License
+                        //import_bigbox_license(strDestFolder);
+
+                        //Restore Ledblinky
+                        //import_Ledblinky(strDestFolder);
+
+                        //Restore High Scores
+                        //import_mame_high_scores(strDestFolder);
+
+                        //Restore Startup Video & Marquee
+                        //import_intro_media(strDestFolder);
+
+                        //Restore Startup Video & Marquee
+                        //import_mame_stableIDs(strDestFolder);
+
+                        //Close the status window
+                        my_parent.hide_status();
+
+                    }
                 });
 
                 //Thread must be STA for the file dialogue to show
