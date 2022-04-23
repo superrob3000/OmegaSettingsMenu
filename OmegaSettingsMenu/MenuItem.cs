@@ -1082,7 +1082,7 @@ namespace OmegaSettingsMenu
                 if (Directory.Exists(destIntroVideoFolder))
                 {
                     //Make a backup of the existing Startup folder
-                    System.IO.Directory.Move(destIntr6+9oVideoFolder, destIntroVideoBackupFolder);
+                    System.IO.Directory.Move(destIntroVideoFolder, destIntroVideoBackupFolder);
                     //Import the backup folder
                     CopyAll(diStartupFolder, diStartupFolderTarget);
                 }
