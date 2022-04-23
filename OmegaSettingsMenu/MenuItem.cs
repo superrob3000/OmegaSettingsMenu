@@ -33,7 +33,9 @@ namespace OmegaSettingsMenu
         private void MenuItemSetup(OmegaSettingsForm parent, Point location, String name)
         {
             my_parent = parent;
-            
+
+            LaunchBoxFolder = Directory.GetParent(Path.GetDirectoryName(Application.ExecutablePath)).ToString();
+
             labelItem = new Label();
             my_parent.get_panel().Controls.Add(this.labelItem);
             this.labelItem.BackColor = System.Drawing.Color.Black;
@@ -99,6 +101,7 @@ namespace OmegaSettingsMenu
         internal Label labelItem;
 
         protected OmegaSettingsForm my_parent;
+        protected String LaunchBoxFolder;
 
         public List<String> ValueList = new List<String>();
         protected int ValueIndex = 0;
@@ -597,27 +600,6 @@ namespace OmegaSettingsMenu
                 //Use a new thread so as not to block the UI thread
                 Thread t = new Thread(() => {
 
-                    //****************** Robert's code using SaveFileDialog - No Longer Using **************************
-                    //****************** Now just having them pick the drive/folder location ***************************
-
-                    //Create save dialog to pass to all the backup routines
-                    //Prompt for the backup file location
-                    //SaveFileDialog dlg = new SaveFileDialog();
-                    //dlg.ValidateNames = true;
-                    //dlg.InitialDirectory = "C:\\Users\\Administrator\\Desktop";
-                    //dlg.Filter = "binary files|*.bin";
-                    //dlg.AddExtension = true;
-                    //dlg.DefaultExt = ".bin";
-                    //dlg.FileName = "favorites_backup.bin";
-                    //DialogResult result = dlg.ShowDialog(ForegroundWindow.CurrentWindow);
-                    //if (result != DialogResult.OK) // Test result.
-                    //{
-                    //    return;
-                    //}
-                    
-                    //**************************************************************************************************
-
-
                     //Dialog box to choose folder destination for backups
                     var dlg = new FolderBrowserDialog();
                     dlg.Description = "Select the USB drive to save your Omega Backup to";
@@ -635,11 +617,13 @@ namespace OmegaSettingsMenu
                         string strDestFolder = strDestPath + "/Omega Backup";
                         
                         //If there's already a Omega Backup folder on the destination drive, Trash that Shit!
-                        if (!Directory.Exists(strDestPath))
+                        if (Directory.Exists(strDestFolder))
                         {
-                            Directory.Delete(strDestPath);
+                            my_parent.show_status("Deleting old Omega backup folder...");
+                            Directory.Delete(strDestFolder, true);
+                            Thread.Sleep(2000);
                         }
-                        
+
                         //Create a fresh Omega Backup folder
                         Directory.CreateDirectory(strDestFolder);
 
@@ -717,46 +701,63 @@ namespace OmegaSettingsMenu
         }
         private void backup_bigbox_license(string destPath)
         {
-            string fileToCopy = @"C:\Users\Administrator\LaunchBox\License.xml";
+            string fileToCopy = LaunchBoxFolder + @"\License.xml";
             string destFileName = destPath + "/License.xml";
 
-            //Save file to location
-            if (File.Exists(destFileName))
-                File.Delete(destFileName);
-            System.IO.File.Copy(fileToCopy, destFileName, true);
-            
-            my_parent.show_status("Exported Bigbox license... Now backing up Ledblinky");
+            if (File.Exists(fileToCopy))
+            {
+                //Save file to location
+                if (File.Exists(destFileName))
+                    File.Delete(destFileName);
+                System.IO.File.Copy(fileToCopy, destFileName, true);
+                my_parent.show_status("Exported Bigbox license... Now backing up Ledblinky");
+            }
+            else
+            {
+                my_parent.show_status("No license file... Now backing up Ledblinky");
+            }
+
             Thread.Sleep(5000);
 
         }
         private void backup_Ledblinky(string destPath)
         {
-            string sourcePath = @"C:\Users\Administrator\LaunchBox\Tools\LEDBlinky";
+            string sourcePath = LaunchBoxFolder + @"\Tools\LEDBlinky";
             string destFileLocation = destPath + "/LEDBlinky";
-                        
-            //Save folder to location
-            var diSource = new DirectoryInfo(sourcePath);
-            var diTarget = new DirectoryInfo(destFileLocation);
             
-            //Copy all the files and subdirectories in Ledblinky folder
-            CopyAll(diSource, diTarget);
+            if (Directory.Exists(sourcePath))
+            {
+                //Save folder to location
+                var diSource = new DirectoryInfo(sourcePath);
+                var diTarget = new DirectoryInfo(destFileLocation);
 
-            my_parent.show_status("Exported LedBlinky Folder... Now backing up Mame High Scores");
+                //Copy all the files and subdirectories in Ledblinky folder
+                CopyAll(diSource, diTarget);
+
+                my_parent.show_status("Exported LedBlinky Folder... Now backing up Mame High Scores");
+            }
+            else
+            {
+                my_parent.show_status("LedBlinky not found... Now backing up Mame High Scores");
+            }
+
             Thread.Sleep(5000);
 
         }
         private void backup_mame_high_scores(string destPath)
         {
-            string sourcePath = @"C:\Users\Administrator\LaunchBox\Emulators\Mame\nvram";
+            string sourcePath = LaunchBoxFolder + @"\Emulators\Mame\nvram";
             string destFileLocation = destPath + "/nvram";
 
-            //Save folder to location
-            var diSource = new DirectoryInfo(sourcePath);
-            var diTarget = new DirectoryInfo(destFileLocation);
+            if (Directory.Exists(sourcePath))
+            {
+                //Save folder to location
+                var diSource = new DirectoryInfo(sourcePath);
+                var diTarget = new DirectoryInfo(destFileLocation);
 
-            //Copy all the mame game nvram folders and files
-            CopyAll(diSource, diTarget);
-
+                //Copy all the mame game nvram folders and files
+                CopyAll(diSource, diTarget);
+            }
             my_parent.show_status("Exported Mame High Scores... Now backing up Intro Marquee and Startup Video");
             Thread.Sleep(5000);
 
@@ -764,9 +765,9 @@ namespace OmegaSettingsMenu
         private void backup_intro_media(string destPath)
         {
             string destFolder = destPath + "/Intro Media";
-            string srcIntroMarquee = @"C:\Users\Administrator\LaunchBox\Videos\StartupMarquee";
-            string srcIntroStartup = @"C:\Users\Administrator\LaunchBox\Videos\Startup";
-            string srcIntroVideo = @"C:\Users\Administrator\LaunchBox\Videos\startup.mp4";
+            string srcIntroMarquee = LaunchBoxFolder + @"\Videos\StartupMarquee";
+            string srcIntroStartup = LaunchBoxFolder + @"\Videos\Startup";
+            string srcIntroVideo = LaunchBoxFolder + @"\Videos\startup.mp4";
             string destIntroMarqueeLocation = destFolder + "/StartupMarquee";
             string destIntroStartupLocation = destFolder + "/Startup";
             string destIntroVideoFileName = destFolder + "/startup.mp4";
@@ -780,7 +781,8 @@ namespace OmegaSettingsMenu
             Directory.CreateDirectory(destFolder);
 
             //Save Intro Video
-            System.IO.File.Copy(srcIntroVideo, destIntroVideoFileName, true);
+            if(File.Exists(srcIntroVideo))
+                System.IO.File.Copy(srcIntroVideo, destIntroVideoFileName, true);
 
             //Copy the Startup Marquee video folder if it exists
             if (Directory.Exists(srcIntroMarquee))
@@ -797,15 +799,22 @@ namespace OmegaSettingsMenu
 
         private void backup_mame_stableIDs(string destPath)
         {
-            string fileToCopy = @"C:\Users\Administrator\LaunchBox\Emulators\MAME\ctrlr\xarcade.cfg";
+            string fileToCopy = LaunchBoxFolder + @"\Emulators\MAME\ctrlr\xarcade.cfg";
             string destFileName = destPath + "/xarcade.cfg";
 
-            //Save file to location
-            if (File.Exists(destFileName))
-                File.Delete(destFileName);
-            System.IO.File.Copy(fileToCopy, destFileName, true);
+            if (File.Exists(fileToCopy))
+            {
+                //Save file to location
+                if (File.Exists(destFileName))
+                    File.Delete(destFileName);
+                System.IO.File.Copy(fileToCopy, destFileName, true);
 
-            my_parent.show_status("Exported Stable Device IDs... Backup Complete... ALL HAIL OMEGA!!!");
+                my_parent.show_status("Exported Stable Device IDs... Backup Complete... ALL HAIL OMEGA!!!");
+            }
+            else
+            {
+                my_parent.show_status("Stable Device IDs not found... Backup Complete... ALL HAIL OMEGA!!!");
+            }
             Thread.Sleep(5000);
 
         }
@@ -899,22 +908,6 @@ namespace OmegaSettingsMenu
             int count = 0;
             string srcFile = srcPath + "/favorites_backup.bin";
 
-            //****************** Robert's code using SaveFileDialog - No Longer Using **************************
-            //******** Now just having them pick the source Omega Backup drive/folder location *****************
-            //Prompt for the backup file location
-            //OpenFileDialog dlg = new OpenFileDialog();
-            //dlg.CheckPathExists = true;
-            //dlg.Title = "Choose the favorites file you want to import.";
-            //dlg.ValidateNames = true;
-            //dlg.Filter = "binary files|*.bin";
-            //dlg.InitialDirectory = "C:\\Users\\Administrator\\Desktop";
-            //DialogResult result = dlg.ShowDialog(ForegroundWindow.CurrentWindow);
-            //if (result != DialogResult.OK) // Test result.
-            //{
-            //return;
-            //}
-            //**************************************************************************************************
-
             try { xSettingsDoc = XDocument.Load(srcFile); }
             catch 
             {
@@ -976,55 +969,73 @@ namespace OmegaSettingsMenu
 
         private void import_bigbox_license(string srcFile)
         {
-            string destFileName = @"C:\Users\Administrator\LaunchBox\License.xml";
+            string destFileName = LaunchBoxFolder + @"\License.xml";
             string fileToCopy = srcFile + "/License.xml";
 
-            //Save file to location
-            if (File.Exists(destFileName))
-                File.Delete(destFileName);
-            System.IO.File.Copy(fileToCopy, destFileName, true);
+            if (File.Exists(fileToCopy))
+            {
+                //Save file to location
+                if (File.Exists(destFileName))
+                    File.Delete(destFileName);
+                System.IO.File.Copy(fileToCopy, destFileName, true);
 
-            my_parent.show_status("Imported Bigbox License... Now restoring Ledblinky");
+                my_parent.show_status("Imported Bigbox License... Now restoring Ledblinky");
+            }
+            else
+            {
+                my_parent.show_status("No Bigbox License to restore... Now restoring Ledblinky");
+            }
             Thread.Sleep(5000);
         }
 
         private void import_Ledblinky(string srcFile)
         {
-            string destFolderPath = @"C:\Users\Administrator\LaunchBox\Tools\LEDBlinky";
-            string backupFolderPath = @"C:\Users\Administrator\LaunchBox\Tools\LEDBlinky_Backup";
+            string destFolderPath = LaunchBoxFolder + @"\Tools\LEDBlinky";
+            string backupFolderPath = LaunchBoxFolder + @"\Tools\LEDBlinky_Backup";
             string srcFileLocation = srcFile + "/LEDBlinky";
 
-            //Save folder to location
-            var diSource = new DirectoryInfo(srcFileLocation);
-            var diTarget = new DirectoryInfo(destFolderPath);
+            if (Directory.Exists(srcFileLocation))
+            {
+                //Save folder to location
+                var diSource = new DirectoryInfo(srcFileLocation);
+                var diTarget = new DirectoryInfo(destFolderPath);
 
-            //If already a backup folder, nuke it
-            if (Directory.Exists(backupFolderPath))
-                Directory.Delete(backupFolderPath,true);
+                //If already a backup folder, nuke it
+                if (Directory.Exists(backupFolderPath))
+                    Directory.Delete(backupFolderPath, true);
 
-            //Make a backup of the existing Ledblinky folder on the drive
-            Directory.Move(destFolderPath, backupFolderPath); 
+                //Make a backup of the existing Ledblinky folder on the drive
+                if(Directory.Exists(destFolderPath))
+                    Directory.Move(destFolderPath, backupFolderPath);
 
-            //Copy all the files and subdirectories in Ledblinky folder
-            CopyAll(diSource, diTarget);
+                //Copy all the files and subdirectories in Ledblinky folder
+                CopyAll(diSource, diTarget);
 
-            my_parent.show_status("Imported LedBlinky Folder... Now restoring Mame High Scores");
+                my_parent.show_status("Imported LedBlinky Folder... Now restoring Mame High Scores");
+            }
+            else
+            {
+                my_parent.show_status("No LedBlinky Folder to restore... Now restoring Mame High Scores");
+            }
             Thread.Sleep(5000);
 
         }
 
         private void import_mame_high_scores(string srcFile)
         {
-            string destFolderPath = @"C:\Users\Administrator\LaunchBox\Emulators\Mame\nvram";
+            string destFolderPath = LaunchBoxFolder + @"\Emulators\Mame\nvram";
             string srcFileLocation = srcFile + "/nvram";
 
-            //Save folder to location
-            var diSource = new DirectoryInfo(srcFileLocation);
-            var diTarget = new DirectoryInfo(destFolderPath);
+            if (Directory.Exists(srcFileLocation))
+            {
+                //Save folder to location
+                var diSource = new DirectoryInfo(srcFileLocation);
+                var diTarget = new DirectoryInfo(destFolderPath);
 
-            //Copy all the mame game nvram folders and files
-            CopyAll(diSource, diTarget);
+                //Copy all the mame game nvram folders and files
+                CopyAll(diSource, diTarget);
 
+            }
             my_parent.show_status("Imported Mame High Scores... Now restoring Intro Marquee and Startup Video");
             Thread.Sleep(5000);
 
@@ -1033,12 +1044,12 @@ namespace OmegaSettingsMenu
         private void import_intro_media(string srcFile)
         {
             string srcFolderPath = srcFile + "/Intro Media";
-            string destIntroMarquee = @"C:\Users\Administrator\LaunchBox\Videos\StartupMarquee";
-            string destIntroBackupMarquee = @"C:\Users\Administrator\LaunchBox\Videos\StartupMarquee_Backup";
-            string destIntroVideo = @"C:\Users\Administrator\LaunchBox\Videos\startup.mp4";
-            string destIntroVideoOldFileName = @"C:\Users\Administrator\LaunchBox\Videos\startup_original.mp4";
-            string destIntroVideoFolder = @"C:\Users\Administrator\LaunchBox\Videos\Startup";
-            string destIntroVideoBackupFolder = @"C:\Users\Administrator\LaunchBox\Videos\Startup_Backup";
+            string destIntroMarquee = LaunchBoxFolder + @"\Videos\StartupMarquee";
+            string destIntroBackupMarquee = LaunchBoxFolder + @"\Videos\StartupMarquee_Backup";
+            string destIntroVideo = LaunchBoxFolder + @"\Videos\startup.mp4";
+            string destIntroVideoOldFileName = LaunchBoxFolder + @"\Videos\startup_original.mp4";
+            string destIntroVideoFolder = LaunchBoxFolder + @"\Videos\Startup";
+            string destIntroVideoBackupFolder = LaunchBoxFolder + @"\Videos\Startup_Backup";
             string srcIntroMarqueeLocation = srcFolderPath + "/StartupMarquee";
             string srcIntroVideoLocation = srcFolderPath + "/Startup";
             string srcIntroVideoFileName = srcFolderPath + "/startup.mp4";
@@ -1046,32 +1057,40 @@ namespace OmegaSettingsMenu
 
             var diIntroMarqueeIntro = new DirectoryInfo(srcIntroMarqueeLocation);
             var diVideoTarget = new DirectoryInfo(destIntroMarquee);
-            var diStartupFolder = new DirectoryInfo(srcIntroMarqueeLocation);
+            var diStartupFolder = new DirectoryInfo(srcIntroVideoLocation);
             var diStartupFolderTarget = new DirectoryInfo(destIntroVideoFolder);
 
-            //If there is already a backup of the startup file, get rid of it first
-            if (File.Exists(destIntroVideoOldFileName))
-                System.IO.File.Delete(destIntroVideoOldFileName);
-
-            //Rename the existing startup.mp4
-            if (File.Exists(destIntroVideo))
-               System.IO.File.Move(destIntroVideo, destIntroVideoOldFileName);
-            //Import Intro Video
-            System.IO.File.Copy(srcIntroVideoFileName, destIntroVideo, true);
-
-            //If already a backup folder, nuke it
-            if (Directory.Exists(destIntroBackupMarquee))
-                Directory.Delete(destIntroBackupMarquee, true);
-
-            //If there is a StartupMarquee Folder
-            if (System.IO.Directory.Exists(destIntroMarquee)) 
+            //If someone has backed up a startup video
+            if (File.Exists(srcIntroVideoFileName))
             {
-                //Create backup of the Startup Marquee folder
-                System.IO.Directory.Move(destIntroMarquee, destIntroBackupMarquee);
+                //If there is already a backup of the startup file, get rid of it first
+                if (File.Exists(destIntroVideoOldFileName))
+                    System.IO.File.Delete(destIntroVideoOldFileName);
+
+                //Rename the existing startup.mp4
+                if (File.Exists(destIntroVideo))
+                    System.IO.File.Move(destIntroVideo, destIntroVideoOldFileName);
+                //Import Intro Video
+                System.IO.File.Copy(srcIntroVideoFileName, destIntroVideo, true);
+            }
+
+            //If someone has backed up a StartupMarquee folder
+            if (Directory.Exists(srcIntroMarqueeLocation))
+            {
+                //If already a backup folder, nuke it
+                if (Directory.Exists(destIntroBackupMarquee))
+                    Directory.Delete(destIntroBackupMarquee, true);
+
+                //If there is a StartupMarquee Folder
+                if (System.IO.Directory.Exists(destIntroMarquee))
+                {
+                    //Create backup of the Startup Marquee folder
+                    System.IO.Directory.Move(destIntroMarquee, destIntroBackupMarquee);
+                }
                 //Copy the Startup Marquee folder
                 CopyAll(diIntroMarqueeIntro, diVideoTarget);
             }
-            
+
             //If someone has backed up a Startup folder
             if (Directory.Exists(srcIntroVideoLocation)) {
 
@@ -1079,14 +1098,14 @@ namespace OmegaSettingsMenu
                 if (Directory.Exists(destIntroVideoBackupFolder))
                     Directory.Delete(destIntroVideoBackupFolder, true);
 
+                //If there is a Startup Folder
                 if (Directory.Exists(destIntroVideoFolder))
                 {
                     //Make a backup of the existing Startup folder
                     System.IO.Directory.Move(destIntroVideoFolder, destIntroVideoBackupFolder);
-                    //Import the backup folder
-                    CopyAll(diStartupFolder, diStartupFolderTarget);
                 }
-                
+                //Import the backup folder
+                CopyAll(diStartupFolder, diStartupFolderTarget);
             }
 
             my_parent.show_status("Imported Intro Marquee & Video... Now restoring Mame Stable Device Ids");
@@ -1096,14 +1115,16 @@ namespace OmegaSettingsMenu
 
         private void import_mame_stableIDs(string srcFile)
         {
-            string destFileName = @"C:\Users\Administrator\LaunchBox\Emulators\MAME\ctrlr\xarcade.cfg";
+            string destFileName = LaunchBoxFolder + @"\Emulators\MAME\ctrlr\xarcade.cfg";
             string fileToCopy = srcFile + "/xarcade.cfg";
 
-            //Save file to location
-            if (File.Exists(destFileName))
-                File.Delete(destFileName);
-            System.IO.File.Copy(fileToCopy, destFileName, true);
-
+            if (File.Exists(fileToCopy))
+            {
+                //Save file to location
+                if (File.Exists(destFileName))
+                    File.Delete(destFileName);
+                System.IO.File.Copy(fileToCopy, destFileName, true);
+            }
             my_parent.show_status("Imported Stable Device IDs... Restore Complete... ALL HAIL OMEGA!!!");
             Thread.Sleep(5000);
 
