@@ -1000,6 +1000,12 @@ namespace OmegaSettingsMenu
                 var diSource = new DirectoryInfo(srcFileLocation);
                 var diTarget = new DirectoryInfo(destFolderPath);
 
+                //If Ledblinky is running, kill it
+                foreach (var process in Process.GetProcessesByName("LEDBlinky"))
+                {
+                    process.Kill();
+                }
+
                 //If already a backup folder, nuke it
                 if (Directory.Exists(backupFolderPath))
                     Directory.Delete(backupFolderPath, true);
