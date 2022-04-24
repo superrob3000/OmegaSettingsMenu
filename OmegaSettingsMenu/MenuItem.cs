@@ -605,9 +605,10 @@ namespace OmegaSettingsMenu
                     dlg.Description = "Select the USB drive to save your Omega Backup to";
 
                     DialogResult srcFolder = dlg.ShowDialog(ForegroundWindow.CurrentWindow);
-                    
-                    if (srcFolder != DialogResult.OK && !string.IsNullOrWhiteSpace(dlg.SelectedPath))
+
+                    if (srcFolder != DialogResult.OK || string.IsNullOrWhiteSpace(dlg.SelectedPath))
                     {
+                        my_parent.hide_status();
                         return;
                     }
                     else {
@@ -746,21 +747,32 @@ namespace OmegaSettingsMenu
         }
         private void backup_mame_high_scores(string destPath)
         {
-            string sourcePath = LaunchBoxFolder + @"\Emulators\Mame\nvram";
-            string destFileLocation = destPath + "/nvram";
-
-            if (Directory.Exists(sourcePath))
+            //Backup high scores for each MAME emulator that Launchbox is using
+            foreach (var emulator in PluginHelper.DataManager.GetAllEmulators())
             {
-                //Save folder to location
-                var diSource = new DirectoryInfo(sourcePath);
-                var diTarget = new DirectoryInfo(destFileLocation);
+                if (emulator.Title.StartsWith("MAME"))
+                {
+                    //Get path to this mame instance
+                    String mame_path = Path.GetDirectoryName(emulator.ApplicationPath);
+                    string mame_folder = new DirectoryInfo(mame_path).Name;
 
-                //Copy all the mame game nvram folders and files
-                CopyAll(diSource, diTarget);
+                    string sourcePath = mame_path + "/nvram";
+                    string destFileLocation = destPath + "/mame_highscores/" + mame_folder + "/nvram";
+
+                    if (Directory.Exists(sourcePath))
+                    {
+                        //Save folder to location
+                        var diSource = new DirectoryInfo(sourcePath);
+                        var diTarget = new DirectoryInfo(destFileLocation);
+
+                        //Copy all the mame game nvram folders and files
+                        CopyAll(diSource, diTarget);
+                    }
+                }
             }
+
             my_parent.show_status("Exported Mame High Scores... Now backing up Intro Marquee and Startup Video");
             Thread.Sleep(5000);
-
         }
         private void backup_intro_media(string destPath)
         {
@@ -799,22 +811,33 @@ namespace OmegaSettingsMenu
 
         private void backup_mame_stableIDs(string destPath)
         {
-            string fileToCopy = LaunchBoxFolder + @"\Emulators\MAME\ctrlr\xarcade.cfg";
-            string destFileName = destPath + "/xarcade.cfg";
-
-            if (File.Exists(fileToCopy))
+            //Backup stable IDs for each MAME emulator that Launchbox is using
+            foreach (var emulator in PluginHelper.DataManager.GetAllEmulators())
             {
-                //Save file to location
-                if (File.Exists(destFileName))
-                    File.Delete(destFileName);
-                System.IO.File.Copy(fileToCopy, destFileName, true);
+                if (emulator.Title.StartsWith("MAME"))
+                {
+                    //Get path to this mame instance
+                    String mame_path = Path.GetDirectoryName(emulator.ApplicationPath);
+                    string mame_folder = new DirectoryInfo(mame_path).Name;
 
-                my_parent.show_status("Exported Stable Device IDs... Backup Complete... ALL HAIL OMEGA!!!");
+                    string fileToCopy = mame_path + "/ctrlr/xarcade.cfg";
+                    string destFileName = destPath + "/mame_stableIDs/" + mame_folder + "/ctrlr/xarcade.cfg";
+
+                    if (File.Exists(fileToCopy))
+                    {
+                        if (File.Exists(destFileName))
+                            File.Delete(destFileName);
+
+                        //Create any missing folders for destination file
+                        Directory.CreateDirectory(Path.GetDirectoryName(destFileName));
+
+                        //Save file to location
+                        System.IO.File.Copy(fileToCopy, destFileName, true);
+                    }
+                }
             }
-            else
-            {
-                my_parent.show_status("Stable Device IDs not found... Backup Complete... ALL HAIL OMEGA!!!");
-            }
+            my_parent.show_status("Exported Stable Device IDs... Backup Complete... ALL HAIL OMEGA!!!");
+
             Thread.Sleep(5000);
 
         }
@@ -856,16 +879,32 @@ namespace OmegaSettingsMenu
 
                     DialogResult destFolder = dlg.ShowDialog(ForegroundWindow.CurrentWindow);
 
-                    if (destFolder != DialogResult.OK && !string.IsNullOrWhiteSpace(dlg.SelectedPath))
+                    if (destFolder != DialogResult.OK || string.IsNullOrWhiteSpace(dlg.SelectedPath))
                     {
+                        my_parent.hide_status();
                         return;
                     }
                     else
                     {
-
                         //Set the source folder
                         string strSrcFolder = dlg.SelectedPath;
                         //string strSrcFolder = strSrcPath + "/Omega Backup";
+
+                        //Sanity check the import folder. At least one of the following should exist.
+                        if (
+                        (!Directory.Exists(strSrcFolder + "/Intro Media")) &&
+                        (!Directory.Exists(strSrcFolder + "/LEDBlinky")) &&
+                        (!Directory.Exists(strSrcFolder + "/mame_highscores")) &&
+                        (!Directory.Exists(strSrcFolder + "/mame_stableIDs")) &&
+                        (!File.Exists(strSrcFolder + "/favorites_backup.bin")) &&
+                        (!File.Exists(strSrcFolder + "/License.xml"))
+                        )
+                        {
+                            my_parent.show_status("Invalid backup folder.");
+                            Thread.Sleep(5000);
+                            my_parent.hide_status();
+                            return;
+                        }
 
                         //Restore Favorites 
                         import_favorites(strSrcFolder);
@@ -1029,19 +1068,31 @@ namespace OmegaSettingsMenu
 
         private void import_mame_high_scores(string srcFile)
         {
-            string destFolderPath = LaunchBoxFolder + @"\Emulators\Mame\nvram";
-            string srcFileLocation = srcFile + "/nvram";
-
-            if (Directory.Exists(srcFileLocation))
+            //Import high scores for each MAME emulator that Launchbox is using
+            foreach (var emulator in PluginHelper.DataManager.GetAllEmulators())
             {
-                //Save folder to location
-                var diSource = new DirectoryInfo(srcFileLocation);
-                var diTarget = new DirectoryInfo(destFolderPath);
+                if (emulator.Title.StartsWith("MAME"))
+                {
+                    //Get path to this mame instance
+                    String mame_path = Path.GetDirectoryName(emulator.ApplicationPath);
+                    string mame_folder = new DirectoryInfo(mame_path).Name;
 
-                //Copy all the mame game nvram folders and files
-                CopyAll(diSource, diTarget);
+                    string destFolderPath = mame_path + "/nvram";
+                    string srcFileLocation = srcFile + "/mame_highscores/" + mame_folder + "/nvram";
 
+                    if (Directory.Exists(srcFileLocation))
+                    {
+                        //Save folder to location
+                        var diSource = new DirectoryInfo(srcFileLocation);
+                        var diTarget = new DirectoryInfo(destFolderPath);
+
+                        //Copy all the mame game nvram folders and files
+                        CopyAll(diSource, diTarget);
+
+                    }
+                }
             }
+
             my_parent.show_status("Imported Mame High Scores... Now restoring Intro Marquee and Startup Video");
             Thread.Sleep(5000);
 
@@ -1121,16 +1172,32 @@ namespace OmegaSettingsMenu
 
         private void import_mame_stableIDs(string srcFile)
         {
-            string destFileName = LaunchBoxFolder + @"\Emulators\MAME\ctrlr\xarcade.cfg";
-            string fileToCopy = srcFile + "/xarcade.cfg";
-
-            if (File.Exists(fileToCopy))
+            //Import stable IDs for each MAME emulator that Launchbox is using
+            foreach (var emulator in PluginHelper.DataManager.GetAllEmulators())
             {
-                //Save file to location
-                if (File.Exists(destFileName))
-                    File.Delete(destFileName);
-                System.IO.File.Copy(fileToCopy, destFileName, true);
+                if (emulator.Title.StartsWith("MAME"))
+                {
+                    //Get path to this mame instance
+                    String mame_path = Path.GetDirectoryName(emulator.ApplicationPath);
+                    string mame_folder = new DirectoryInfo(mame_path).Name;
+
+                    string destFileName = mame_path + "/ctrlr/xarcade.cfg";
+                    string fileToCopy = srcFile + "/mame_stableIDs/" + mame_folder + "/ctrlr/xarcade.cfg";
+
+                    if (File.Exists(fileToCopy))
+                    {
+                        if (File.Exists(destFileName))
+                            File.Delete(destFileName);
+
+                        //Create any missing folders for destination file
+                        Directory.CreateDirectory(Path.GetDirectoryName(destFileName));
+
+                        //Save file to location
+                        System.IO.File.Copy(fileToCopy, destFileName, true);
+                    }
+                }
             }
+
             my_parent.show_status("Imported Stable Device IDs... Restore Complete... ALL HAIL OMEGA!!!");
             Thread.Sleep(5000);
 
