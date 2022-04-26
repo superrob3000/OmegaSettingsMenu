@@ -3,6 +3,6 @@ namespace OmegaSettingsMenu
 {
     class Version
     {
-        public const string version = "Omega Package dev build";
+        public const string version = "Omega Support Package v1.11";
     }
 }
