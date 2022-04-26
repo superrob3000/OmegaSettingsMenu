@@ -16,6 +16,7 @@ using System.Xml.Linq;
 using System.Xml.XPath;
 using System.Xml;
 using System.Diagnostics;
+using System.Net;
 
 namespace OmegaSettingsMenu
 {
@@ -666,7 +667,7 @@ namespace OmegaSettingsMenu
         {
 
             string destFileName = destPath + "/favorites_backup.bin";
-            XDocument xSettingsDoc;
+            XDocument xFavoritesDoc;
             int count = 0;
 
             //Add all favorites to our backup XML
@@ -692,9 +693,9 @@ namespace OmegaSettingsMenu
             //Write the backup XML file
             if (File.Exists(destFileName))
                 File.Delete(destFileName);
-            xSettingsDoc = new XDocument();
-            xSettingsDoc.Add(FavoritesBackup);
-            xSettingsDoc.Save(destFileName);
+            xFavoritesDoc = new XDocument();
+            xFavoritesDoc.Add(FavoritesBackup);
+            xFavoritesDoc.Save(destFileName);
 
             my_parent.show_status("Exported " + count + " Favorites... Now backing up Bigbox License");
             Thread.Sleep(5000);
@@ -942,12 +943,12 @@ namespace OmegaSettingsMenu
 
         private void import_favorites(string srcPath)
         {
-            XDocument xSettingsDoc;
+            XDocument xFavoritesDoc;
             IGame game;
             int count = 0;
             string srcFile = srcPath + "/favorites_backup.bin";
 
-            try { xSettingsDoc = XDocument.Load(srcFile); }
+            try { xFavoritesDoc = XDocument.Load(srcFile); }
             catch 
             {
                 my_parent.show_status("Invalid backup file.");
@@ -956,7 +957,7 @@ namespace OmegaSettingsMenu
                 return;
             }
 
-            XElement root = xSettingsDoc
+            XElement root = xFavoritesDoc
             .XPathSelectElement("/FavoritesBackup");
 
             foreach(XElement fav in root.Descendants("Favorite"))
@@ -1227,6 +1228,185 @@ namespace OmegaSettingsMenu
         }
     }
 
+
+    class UpdateCheckMenuItem : NoValueTypeMenuItem
+    {
+        public UpdateCheckMenuItem(OmegaSettingsForm parent, Point location) : base(parent, location, "Check For Updates") { }
+
+        protected override void perform_the_no_value_action()
+        {
+            my_parent.show_status("Checking for updates...");
+
+            try
+            {
+                //Use a new thread so as not to block the UI thread
+                Thread t = new Thread(() =>
+                {
+                    Thread.Sleep(3000);
+                    String LatestVersion;
+                    XDocument xUpdatesDoc;
+
+                    try
+                    {
+                        //Try to load the update info file
+                        String URLString = "http://omegaupdates.ddns.net/updates.xml";
+                        xUpdatesDoc = XDocument.Load(URLString);
+
+                        LatestVersion = xUpdatesDoc
+                            .XPathSelectElement("/OmegaUpdates")
+                            .Element("LatestVersion")
+                            .Value;
+                    }
+                    catch
+                    {
+                        my_parent.show_status("Could not connect to server.");
+                        Thread.Sleep(4000);
+                        my_parent.hide_status();
+                        return;
+                    }
+
+                    String CurrentVersion = Version.version.Split('v').Last();
+
+                    if (Convert.ToDouble(LatestVersion) <= Convert.ToDouble(CurrentVersion))
+                    {
+                        my_parent.show_status("You are up to date.");
+                        Thread.Sleep(4000);
+                        my_parent.hide_status();
+                        return;
+                    }
+
+                    my_parent.show_status("Omega Support Package v" + LatestVersion + " is available.");
+                    Thread.Sleep(3000);
+
+                    //Determine the file to download. Find the mapping with the highest version
+                    //number that is less than or equal to our version
+                    String BestMatch = "0";
+                    String Filename = "null";
+                    try
+                    {
+                        var UpdateMappings = xUpdatesDoc.Element("OmegaUpdates").Element("UpdateMappings");
+                        foreach (var Mapping in UpdateMappings.Elements())
+                        {
+                            String OldVersion = (String)Mapping.Element("OldVersion").Value;
+
+                            if (Convert.ToDouble(OldVersion) <= Convert.ToDouble(CurrentVersion))
+                            {
+                                if (Convert.ToDouble(OldVersion) > Convert.ToDouble(BestMatch))
+                                {
+                                    BestMatch = OldVersion;
+                                    Filename = (String)Mapping.Element("Filename").Value;
+                                }
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        my_parent.show_status("Error 25.");
+                        Thread.Sleep(4000);
+                        my_parent.hide_status();
+                        return;
+                    }
+
+                    if (BestMatch.Equals("0"))
+                    {
+                        my_parent.show_status("Error 26.");
+                        Thread.Sleep(4000);
+                        my_parent.hide_status();
+                        return;
+                    }
+
+                    if (!Directory.Exists(LaunchBoxFolder + "/Updates"))
+                        Directory.CreateDirectory(LaunchBoxFolder + "/Updates");
+
+                    String InstallerPath = LaunchBoxFolder + "/Updates/" + Filename;
+
+                    //Delete the file if it exists.
+                    if (File.Exists(InstallerPath))
+                        File.Delete(InstallerPath);
+
+                    //Download the installer
+                    my_parent.show_status("Downloading Omega Support Package v" + LatestVersion + " (0%)");
+
+                    WebClient webClient = new WebClient();
+                    webClient.Headers.Add("User-Agent: Other");
+                    //webClient.Headers.Add("user-agent", " Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0");
+
+                    webClient.DownloadProgressChanged += (s, e) =>
+                    {
+                        my_parent.show_status("Downloading Omega Support Package v" + LatestVersion + " (" + e.ProgressPercentage + "%)");
+                    };
+                    webClient.DownloadFileCompleted += (s, e) =>
+                    {
+                        if (e.Cancelled)
+                        {
+                            if (File.Exists(InstallerPath))
+                                File.Delete(InstallerPath);
+
+                            my_parent.show_status("File download cancelled.");
+                            Thread.Sleep(6000);
+                            webClient.Dispose();
+                            my_parent.hide_status();
+                            return;
+                        }
+
+                        if (e.Error != null)
+                        {
+                            if (File.Exists(InstallerPath))
+                                File.Delete(InstallerPath);
+
+                            my_parent.show_status(e.Error.ToString());
+                            Thread.Sleep(10000);
+                            webClient.Dispose();
+                            my_parent.hide_status();
+                            return;
+                        }
+
+                        Thread.Sleep(4000);
+                        my_parent.show_status("File download completed.");
+                        Thread.Sleep(3000);
+
+                        my_parent.show_status("Preparing to install.");
+                        Thread.Sleep(3000);
+
+                        //Run the installer
+                        Process ps_instaler = null;
+                        ps_instaler = new Process();
+                        ps_instaler.StartInfo.UseShellExecute = false;
+                        ps_instaler.StartInfo.RedirectStandardInput = false;
+                        ps_instaler.StartInfo.RedirectStandardOutput = false;
+                        ps_instaler.StartInfo.CreateNoWindow = true;
+                        ps_instaler.StartInfo.UserName = null;
+                        ps_instaler.StartInfo.Password = null;
+                        ps_instaler.StartInfo.WindowStyle = ProcessWindowStyle.Normal;
+                        ps_instaler.StartInfo.Arguments = "\"" + LaunchBoxFolder + "\"";
+                        ps_instaler.StartInfo.FileName = InstallerPath;
+
+                        if (File.Exists(ps_instaler.StartInfo.FileName))
+                        {
+                            bool result = ps_instaler.Start();
+                        }
+                        else
+                        {
+                            my_parent.show_status("Installer not found.");
+                            Thread.Sleep(5000);
+                        }
+
+                        //Close the status window
+                        webClient.Dispose();
+                        my_parent.hide_status();
+                    };
+                    webClient.DownloadFileAsync(new Uri("http://omegaupdates.ddns.net/" + Filename),
+                        InstallerPath);
+                    webClient.Dispose();
+                });
+                t.Start();
+            }
+            catch
+            {
+                my_parent.hide_status();
+            }
+        }
+    }
 
     class CancelMenuItem : NoValueTypeMenuItem
     {

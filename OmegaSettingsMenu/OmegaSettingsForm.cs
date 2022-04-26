@@ -78,6 +78,7 @@ namespace OmegaSettingsMenu
             ItemList.Add(new AdultsOnlyGamesMenuItem(this, new_offset()));
             ItemList.Add(new BackupMenuItem(this, new_offset()));
             ItemList.Add(new ImportBackupMenuItem(this, new_offset()));
+            ItemList.Add(new UpdateCheckMenuItem(this, new_offset()));
             ItemList.Add(new CancelMenuItem(this, new_offset()));
             ItemList.Add(new ExitMenuItem(this, new_offset()));
             
