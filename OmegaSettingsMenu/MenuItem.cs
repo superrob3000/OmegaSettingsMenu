@@ -722,7 +722,7 @@ namespace OmegaSettingsMenu
             }
             else
             {
-                my_parent.show_status("No license file... Now backing up Ledblinky");
+                my_parent.show_status("No license file... Now backing up Gun4IR License");
             }
 
             Thread.Sleep(5000);
@@ -1081,7 +1081,7 @@ namespace OmegaSettingsMenu
                     File.Delete(destFileName);
                 System.IO.File.Copy(fileToCopy, destFileName, true);
 
-                my_parent.show_status("Imported Bigbox License... Now restoring Ledblinky");
+                my_parent.show_status("Imported Bigbox License... Now restoring Gun4IR License");
             }
             else
             {
@@ -1379,9 +1379,20 @@ namespace OmegaSettingsMenu
                         return;
                     }
 
-                    String CurrentVersion = Version.version.Split('v').Last();
+                    Double CurrentVersion;
+                    try
+                    {
+                        CurrentVersion = Convert.ToDouble(Version.version.Split('v').Last());
+                    }
+                    catch
+                    {
+                        //version was not a number (probably master branch).
+                        //So just use v1.11 so that we get all updates.
+                        //v1.11 was the first version where OTA updates were available.
+                        CurrentVersion = 1.11;
+                    }
 
-                    if (Convert.ToDouble(LatestVersion) <= Convert.ToDouble(CurrentVersion))
+                    if (Convert.ToDouble(LatestVersion) <= CurrentVersion)
                     {
                         my_parent.show_status("You are up to date.");
                         Thread.Sleep(4000);
@@ -1403,7 +1414,7 @@ namespace OmegaSettingsMenu
                         {
                             String OldVersion = (String)Mapping.Element("OldVersion").Value;
 
-                            if (Convert.ToDouble(OldVersion) <= Convert.ToDouble(CurrentVersion))
+                            if (Convert.ToDouble(OldVersion) <= CurrentVersion)
                             {
                                 if (Convert.ToDouble(OldVersion) > Convert.ToDouble(BestMatch))
                                 {
