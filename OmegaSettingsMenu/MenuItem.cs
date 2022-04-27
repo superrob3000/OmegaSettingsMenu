@@ -634,6 +634,9 @@ namespace OmegaSettingsMenu
                         //Backup Bigbox License
                         backup_bigbox_license(strDestFolder);
 
+                        //Backup Gun4IR License
+                        backup_Gun4IR_license(strDestFolder);
+
                         //Backup Ledblinky
                         backup_Ledblinky(strDestFolder);
 
@@ -711,7 +714,28 @@ namespace OmegaSettingsMenu
                 if (File.Exists(destFileName))
                     File.Delete(destFileName);
                 System.IO.File.Copy(fileToCopy, destFileName, true);
-                my_parent.show_status("Exported Bigbox license... Now backing up Ledblinky");
+                my_parent.show_status("Exported Bigbox license... Now backing up Gun4IR License");
+            }
+            else
+            {
+                my_parent.show_status("No license file... Now backing up Ledblinky");
+            }
+
+            Thread.Sleep(5000);
+
+        }
+        private void backup_Gun4IR_license(string destPath)
+        {
+            string fileToCopy = LaunchBoxFolder + @"\Tools\JB_GUN4IR_GUI_1.26_FW_2.64\gui.lic";
+            string destFileName = destPath + "/gui.lic";
+
+            if (File.Exists(fileToCopy))
+            {
+                //Save file to location
+                if (File.Exists(destFileName))
+                    File.Delete(destFileName);
+                System.IO.File.Copy(fileToCopy, destFileName, true);
+                my_parent.show_status("Exported Gun4IR license... Now backing up Ledblinky");
             }
             else
             {
@@ -912,6 +936,9 @@ namespace OmegaSettingsMenu
                         //Restore Bigbox License
                         import_bigbox_license(strSrcFolder);
 
+                        //Restore Gun4IR License
+                        import_Gun4IR_license(strSrcFolder);
+
                         //Restore Ledblinky
                         import_Ledblinky(strSrcFolder);
 
@@ -1023,6 +1050,27 @@ namespace OmegaSettingsMenu
             else
             {
                 my_parent.show_status("No Bigbox License to restore... Now restoring Ledblinky");
+            }
+            Thread.Sleep(5000);
+        }
+
+        private void import_Gun4IR_license(string srcFile)
+        {
+            string destFileName = LaunchBoxFolder + @"\Tools\JB_GUN4IR_GUI_1.26_FW_2.64\gui.lic";
+            string fileToCopy = srcFile + "/gui.lic";
+
+            if (File.Exists(fileToCopy))
+            {
+                //Save file to location
+                if (File.Exists(destFileName))
+                    File.Delete(destFileName);
+                System.IO.File.Copy(fileToCopy, destFileName, true);
+
+                my_parent.show_status("Imported Gun4IR License... Now restoring Ledblinky");
+            }
+            else
+            {
+                my_parent.show_status("No Gun4IR License to restore... Now restoring Ledblinky");
             }
             Thread.Sleep(5000);
         }
