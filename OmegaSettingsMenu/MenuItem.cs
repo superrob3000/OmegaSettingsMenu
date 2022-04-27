@@ -644,6 +644,9 @@ namespace OmegaSettingsMenu
                         //Backup Startup Video & Marquee
                         backup_intro_media(strDestFolder);
 
+                        //Backup Wii save_data
+                        backup_wii_saves(strDestFolder);
+
                         //Backup Mame Stable IDs
                         backup_mame_stableIDs(strDestFolder);
 
@@ -805,9 +808,38 @@ namespace OmegaSettingsMenu
             if (Directory.Exists(srcIntroStartup))
                 CopyAll(diStartupIntro, diStartupTarget);
 
-            my_parent.show_status("Exported Intro Marquee & Video... Now backing up Mame Stable Device Ids");
+            my_parent.show_status("Exported Intro Marquee & Video... Now backing up Wii save data");
             Thread.Sleep(5000);
 
+        }
+        private void backup_wii_saves(string destPath)
+        {
+            //Backup high scores for each MAME emulator that Launchbox is using
+            foreach (var emulator in PluginHelper.DataManager.GetAllEmulators())
+            {
+                if (emulator.Title.StartsWith("Dolphin"))
+                {
+                    //Get path to this dolphin instance
+                    String wii_path = Path.GetDirectoryName(emulator.ApplicationPath);
+                    string wii_folder = new DirectoryInfo(wii_path).Name;
+
+                    string sourcePath = wii_path + "/User/Wii";
+                    string destFileLocation = destPath + "/wii_saves/" + wii_folder + "/User/Wii";
+
+                    if (Directory.Exists(sourcePath))
+                    {
+                        //Save folder to location
+                        var diSource = new DirectoryInfo(sourcePath);
+                        var diTarget = new DirectoryInfo(destFileLocation);
+
+                        //Copy all the wii user data
+                        CopyAll(diSource, diTarget);
+                    }
+                }
+            }
+
+            my_parent.show_status("Exported Wii save data... Now backing up Mame Stable Device Ids");
+            Thread.Sleep(5000);
         }
 
         private void backup_mame_stableIDs(string destPath)
@@ -921,6 +953,9 @@ namespace OmegaSettingsMenu
 
                         //Restore Startup Video & Marquee
                         import_intro_media(strSrcFolder);
+
+                        //Restore Wii save_data
+                        import_wii_saves(strSrcFolder);
 
                         //Restore Mame Stable IDs
                         import_mame_stableIDs(strSrcFolder);
@@ -1166,9 +1201,40 @@ namespace OmegaSettingsMenu
                 CopyAll(diStartupFolder, diStartupFolderTarget);
             }
 
-            my_parent.show_status("Imported Intro Marquee & Video... Now restoring Mame Stable Device Ids");
+            my_parent.show_status("Imported Intro Marquee & Video... Now restoring Wii save data");
             Thread.Sleep(5000);
 
+        }
+
+        private void import_wii_saves(string srcFile)
+        {
+            //Import high scores for each MAME emulator that Launchbox is using
+            foreach (var emulator in PluginHelper.DataManager.GetAllEmulators())
+            {
+                if (emulator.Title.StartsWith("Dolphin"))
+                {
+                    //Get path to this dolphin instance
+                    String wii_path = Path.GetDirectoryName(emulator.ApplicationPath);
+                    string wii_folder = new DirectoryInfo(wii_path).Name;
+
+                    string destFolderPath = wii_path + "/User/Wii";
+                    string srcFileLocation = srcFile + "/wii_saves/" + wii_folder + "/User/Wii";
+
+                    if (Directory.Exists(srcFileLocation))
+                    {
+                        //Save folder to location
+                        var diSource = new DirectoryInfo(srcFileLocation);
+                        var diTarget = new DirectoryInfo(destFolderPath);
+
+                        //Copy all the wii data
+                        CopyAll(diSource, diTarget);
+
+                    }
+                }
+            }
+
+            my_parent.show_status("Imported Wii save data... Now restoring Mame Stable Device Ids");
+            Thread.Sleep(5000);
         }
 
         private void import_mame_stableIDs(string srcFile)
