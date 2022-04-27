@@ -1085,7 +1085,7 @@ namespace OmegaSettingsMenu
             }
             else
             {
-                my_parent.show_status("No Bigbox License to restore... Now restoring Ledblinky");
+                my_parent.show_status("No Bigbox License to restore... Now restoring Gun4IR License");
             }
             Thread.Sleep(5000);
         }
