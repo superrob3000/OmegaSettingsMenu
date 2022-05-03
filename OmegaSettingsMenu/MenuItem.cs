@@ -1400,12 +1400,10 @@ namespace OmegaSettingsMenu
                         return;
                     }
 
-                    my_parent.show_status("Omega Support Package v" + LatestVersion + " is available.");
-                    Thread.Sleep(3000);
-
                     //Determine the file to download. Find the mapping with the highest version
                     //number that is less than or equal to our version
                     String BestMatch = "0";
+                    String NewVersion = "0";
                     String Filename = "null";
                     try
                     {
@@ -1420,6 +1418,7 @@ namespace OmegaSettingsMenu
                                 {
                                     BestMatch = OldVersion;
                                     Filename = (String)Mapping.Element("Filename").Value;
+                                    NewVersion = (String)Mapping.Element("NewVersion").Value;
                                 }
                             }
                         }
@@ -1440,6 +1439,20 @@ namespace OmegaSettingsMenu
                         return;
                     }
 
+                    my_parent.show_status("Omega Support Package v" + LatestVersion + " is available.");
+                    Thread.Sleep(4000);
+
+                    //Sometimes we need to update in steps, so the new version being
+                    //installed might not be the latest version.
+                    if (Convert.ToDouble(NewVersion) < Convert.ToDouble(LatestVersion))
+                    {
+                        my_parent.show_status("v" + NewVersion + " must be installed first.\r\nPlease check for additional updates after installation is complete.");
+                        Thread.Sleep(5000);
+                    }
+
+                    //Download the installer
+                    my_parent.show_status("Downloading Omega Support Package v" + NewVersion + " (0%)");
+
                     if (!Directory.Exists(LaunchBoxFolder + "/Updates"))
                         Directory.CreateDirectory(LaunchBoxFolder + "/Updates");
 
@@ -1449,16 +1462,12 @@ namespace OmegaSettingsMenu
                     if (File.Exists(InstallerPath))
                         File.Delete(InstallerPath);
 
-                    //Download the installer
-                    my_parent.show_status("Downloading Omega Support Package v" + LatestVersion + " (0%)");
-
                     WebClient webClient = new WebClient();
                     webClient.Headers.Add("User-Agent: Other");
-                    //webClient.Headers.Add("user-agent", " Mozilla/5.0 (Windows NT 6.1; WOW64; rv:25.0) Gecko/20100101 Firefox/25.0");
 
                     webClient.DownloadProgressChanged += (s, e) =>
                     {
-                        my_parent.show_status("Downloading Omega Support Package v" + LatestVersion + " (" + e.ProgressPercentage + "%)");
+                        my_parent.show_status("Downloading Omega Support Package v" + NewVersion + " (" + e.ProgressPercentage + "%)");
                     };
                     webClient.DownloadFileCompleted += (s, e) =>
                     {
