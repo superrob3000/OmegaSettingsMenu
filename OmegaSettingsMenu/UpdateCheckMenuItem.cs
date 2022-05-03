@@ -7,6 +7,7 @@ using System.Xml.Linq;
 using System.Xml.XPath;
 using System.Diagnostics;
 using System.Net;
+using System.Security.Cryptography;
 
 namespace OmegaSettingsMenu
 {
@@ -72,6 +73,7 @@ namespace OmegaSettingsMenu
                     String BestMatch = "0";
                     String NewVersion = "0";
                     String Filename = "null";
+                    String SignatureFilename = "null";
                     try
                     {
                         var UpdateMappings = xUpdatesDoc.Element("OmegaUpdates").Element("UpdateMappings");
@@ -106,6 +108,8 @@ namespace OmegaSettingsMenu
                         return;
                     }
 
+                    SignatureFilename = Filename + ".signature";
+
                     my_parent.show_status("Omega Support Package v" + LatestVersion + " is available.");
                     Thread.Sleep(4000);
 
@@ -117,21 +121,44 @@ namespace OmegaSettingsMenu
                         Thread.Sleep(5000);
                     }
 
-                    //Download the installer
+                    //Download the installer and its signature
                     my_parent.show_status("Downloading Omega Support Package v" + NewVersion + " (0%)");
 
                     if (!Directory.Exists(LaunchBoxFolder + "/Updates"))
                         Directory.CreateDirectory(LaunchBoxFolder + "/Updates");
 
                     String InstallerPath = LaunchBoxFolder + "/Updates/" + Filename;
+                    String InstallerSignaturePath = LaunchBoxFolder + "/Updates/" + SignatureFilename;
 
-                    //Delete the file if it exists.
+                    //Delete the files if they exist.
                     if (File.Exists(InstallerPath))
                         File.Delete(InstallerPath);
+
+                    if (File.Exists(InstallerSignaturePath))
+                        File.Delete(InstallerSignaturePath);
 
                     WebClient webClient = new WebClient();
                     webClient.Headers.Add("User-Agent: Other");
 
+                    //First grab the signature
+                    try
+                    {
+                        webClient.DownloadFile(new Uri("http://omegaupdates.ddns.net/" + SignatureFilename),
+                            InstallerSignaturePath);
+                    }
+                    catch
+                    {
+                        if (File.Exists(InstallerSignaturePath))
+                            File.Delete(InstallerSignaturePath);
+
+                        my_parent.show_status("Signature not found.");
+                        Thread.Sleep(6000);
+                        webClient.Dispose();
+                        my_parent.hide_status();
+                        return;
+                    }
+
+                    //Now download the installer
                     webClient.DownloadProgressChanged += (s, e) =>
                     {
                         my_parent.show_status("Downloading Omega Support Package v" + NewVersion + " (" + e.ProgressPercentage + "%)");
@@ -155,6 +182,9 @@ namespace OmegaSettingsMenu
                             if (File.Exists(InstallerPath))
                                 File.Delete(InstallerPath);
 
+                            if (File.Exists(InstallerSignaturePath))
+                                File.Delete(InstallerSignaturePath);
+
                             my_parent.show_status(e.Error.ToString());
                             Thread.Sleep(10000);
                             webClient.Dispose();
@@ -166,6 +196,50 @@ namespace OmegaSettingsMenu
                         my_parent.show_status("File download completed.");
                         Thread.Sleep(3000);
 
+                        my_parent.show_status("Authenticating the download.");
+                        Thread.Sleep(3000);
+
+                        //Authenticate using our public key (no need to hide the public key).
+                        RSACryptoServiceProvider rsa = new RSACryptoServiceProvider();
+                        rsa.FromXmlString("<RSAKeyValue><Modulus>vZHO1qeP+k2FMexrTfKnDEPRHBG11qm9KkKpRb+5OGC04vwYcTgOEQGKnV0cripyh80p6t0ZLSqpEWxuDNszXeTvLbfJEF0bASMtOEFeTVSZkqM1sf80hOfbQGU6B1dqxP/szZ9JJJzWv1lRMc1u13+1TPWMWa+3BJXktw+zTGk=</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>");
+
+                        //Hash the file
+                        byte[] hashValue;
+                        byte[] signedHashValue = File.ReadAllBytes(InstallerSignaturePath);
+                        using (FileStream fs = new FileStream(InstallerPath, FileMode.Open))
+                        using (BufferedStream bs = new BufferedStream(fs))
+                        {
+                            using (SHA1Managed sha1 = new SHA1Managed())
+                            {
+                                hashValue = sha1.ComputeHash(bs);
+                            }
+                        }
+
+                        //Create an RSAPKCS1SignatureDeformatter object and pass it the
+                        //RSA instance to transfer the public key.
+                        RSAPKCS1SignatureDeformatter rsaDeformatter = new RSAPKCS1SignatureDeformatter(rsa);
+
+                        //Set the hash algorithm to SHA1.
+                        rsaDeformatter.SetHashAlgorithm("SHA1");
+
+                        //Verify the hash using the public key.
+                        if (!rsaDeformatter.VerifySignature(hashValue, signedHashValue))
+                        {
+                            if (File.Exists(InstallerPath))
+                                File.Delete(InstallerPath);
+
+                            if (File.Exists(InstallerSignaturePath))
+                                File.Delete(InstallerSignaturePath);
+
+                            my_parent.show_status("Authentication failed!!");
+                            Thread.Sleep(10000);
+                            webClient.Dispose();
+                            my_parent.hide_status();
+                            return;
+
+                        }
+
+                        //The update is from the Omega group and is unmodified. Install it.
                         my_parent.show_status("Preparing to install.");
                         Thread.Sleep(3000);
 
@@ -198,7 +272,6 @@ namespace OmegaSettingsMenu
                     };
                     webClient.DownloadFileAsync(new Uri("http://omegaupdates.ddns.net/" + Filename),
                         InstallerPath);
-                    webClient.Dispose();
                 });
                 t.Start();
             }
