@@ -670,6 +670,7 @@ namespace OmegaSettingsMenu
             string destFileName = destPath + "/favorites_backup.bin";
             XDocument xFavoritesDoc;
             int count = 0;
+            int kids_count = 0;
 
             //Add all favorites to our backup XML
             XElement FavoritesBackup = new XElement("FavoritesBackup");
@@ -689,6 +690,21 @@ namespace OmegaSettingsMenu
                         );
                     count++;
                 }
+
+                //Check for Kids Favorites
+                if (game.GenresString.Contains("KidsFavorite"))
+                {
+                    FavoritesBackup.Add(
+                        new XElement("KidsFavorite",
+                              new XElement("GameId", game.Id),
+                              new XElement("LaunchBoxDbId", game.LaunchBoxDbId),
+                              new XElement("GameTitle", game.Title),
+                              new XElement("GameFileName", Path.GetFileName(game.ApplicationPath)),
+                              new XElement("GamePlatform", game.Platform)
+                                )
+                        );
+                    kids_count++;
+                }
             }
 
             //Write the backup XML file
@@ -698,7 +714,9 @@ namespace OmegaSettingsMenu
             xFavoritesDoc.Add(FavoritesBackup);
             xFavoritesDoc.Save(destFileName);
 
-            my_parent.show_status("Exported " + count + " Favorites... Now backing up Bigbox License");
+            String msg = (kids_count > 0) ? "Exported " + kids_count + " Kids Favorites.\r\n" : "";
+            msg += "Exported " + count + " Favorites... Now backing up Bigbox License";
+            my_parent.show_status(msg);
             Thread.Sleep(5000);
 
         }
@@ -1003,6 +1021,7 @@ namespace OmegaSettingsMenu
             XDocument xFavoritesDoc;
             IGame game;
             int count = 0;
+            int kids_count = 0;
             string srcFile = srcPath + "/favorites_backup.bin";
 
             try { xFavoritesDoc = XDocument.Load(srcFile); }
@@ -1017,6 +1036,7 @@ namespace OmegaSettingsMenu
             XElement root = xFavoritesDoc
             .XPathSelectElement("/FavoritesBackup");
 
+            //Restore Favorites
             foreach(XElement fav in root.Descendants("Favorite"))
             {
                 game = null;
@@ -1049,6 +1069,45 @@ namespace OmegaSettingsMenu
                 }
             }
 
+            //Restore Kids Favorites
+            foreach (XElement fav in root.Descendants("KidsFavorite"))
+            {
+                game = null;
+                game = PluginHelper.DataManager.GetGameById(fav.Element("GameId").Value);
+
+                if (game != null)
+                {
+                    if (!game.GenresString.Contains("KidsFavorite"))
+                    {
+                        game.GenresString = game.GenresString + " KidsFavorite";
+                        kids_count++;
+                    }
+                }
+                else
+                {
+                    // There was no direct match for gameId but let's try one more time with <platform,title,filename>
+                    IPlatform platform = null;
+                    platform = PluginHelper.DataManager.GetPlatformByName(fav.Element("GamePlatform").Value);
+
+                    if (platform != null)
+                    {
+                        foreach (var platform_game in platform.GetAllGames(true, false))
+                        {
+                            if (platform_game.Title.Equals(fav.Element("GameTitle").Value) &&
+                                Path.GetFileName(platform_game.ApplicationPath).Equals(fav.Element("GameFileName").Value))
+                            {
+                                if (!platform_game.GenresString.Contains("KidsFavorite"))
+                                {
+                                    platform_game.GenresString = platform_game.GenresString + " KidsFavorite";
+                                    kids_count++;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
             PluginHelper.DataManager.Save();
 
             if (PluginHelper.StateManager.IsBigBox == false)
@@ -1060,7 +1119,9 @@ namespace OmegaSettingsMenu
                 my_parent.restart_required = true;
             }
 
-            my_parent.show_status("Imported " + count + " Favorites" + "\r\nA RESTART IS REQUIRED for this change to take effect... \r\nNow Restoring Bigbox License");
+            String msg = (kids_count > 0) ? "Imported " + kids_count + " Kids Favorites.\r\n" : "";
+            msg += "Imported " + count + " Favorites" + "\r\nA RESTART IS REQUIRED for this change to take effect... \r\nNow Restoring Bigbox License";
+            my_parent.show_status(msg);
             Thread.Sleep(5000);
         }
 
