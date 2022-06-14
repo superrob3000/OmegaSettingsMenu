@@ -79,6 +79,7 @@
     <Compile Include="MenuBorder.cs" />
     <Compile Include="MenuItem.cs" />
     <Compile Include="MenuTips.cs" />
+    <Compile Include="OmegaMediaElement.cs" />
     <Compile Include="OmegaSettingsForm.cs">
       <SubType>Form</SubType>
     </Compile>
