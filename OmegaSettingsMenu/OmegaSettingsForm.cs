@@ -26,6 +26,8 @@ namespace OmegaSettingsMenu
         {
             InitializeComponent();
 
+            Version.SetVersion();
+
             this.my_parent = parent;
             this.marquee_frm = marquee;
 
@@ -309,6 +311,7 @@ namespace OmegaSettingsMenu
         private void save_values_to_xml()
         {
             XElement OmegaSettings = new XElement("OmegaSettings");
+            OmegaSettings.Add(new XElement("SupportPackageVersion", Version.version));
             foreach (var item in ItemList)
             {
                 string tag = item.get_xmltag();

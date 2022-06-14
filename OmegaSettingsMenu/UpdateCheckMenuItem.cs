@@ -50,11 +50,13 @@ namespace OmegaSettingsMenu
                     Double CurrentVersion;
                     try
                     {
-                        CurrentVersion = Convert.ToDouble(Version.version.Split('v').Last());
+                        CurrentVersion = Convert.ToDouble(Version.version);
                     }
-                    catch
+                    catch { CurrentVersion = 0; }
+
+                    if(CurrentVersion == 0)
                     {
-                        //version was not a number (probably master branch).
+                        //Could not determine the version.
                         //So just use v1.11 so that we get all updates.
                         //v1.11 was the first version where OTA updates were available.
                         CurrentVersion = 1.11;

@@ -44,7 +44,7 @@ namespace OmegaSettingsMenu
             this.labelVersion.TabIndex = 0;
             this.labelVersion.TabStop = false;
             this.labelVersion.TextAlign = ContentAlignment.TopCenter;
-            this.labelVersion.Text = Version.version;
+            this.labelVersion.Text = "Omega Support Package v" + Version.version;
             this.labelVersion.Location = new Point(location.X + this.labelLogo.Size.Width/2 - this.labelVersion.Size.Width / 2, location.Y + this.labelLogo.Size.Height - this.labelVersion.Size.Height);
 
             Location = location;
