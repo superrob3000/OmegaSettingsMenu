@@ -22,14 +22,14 @@ namespace OmegaSettingsMenu
 {
     public partial class OmegaSettingsForm : Form
     {
-        public OmegaSettingsForm(TheSystemMenuItem parent, MarqueeForm marquee)
+        public OmegaSettingsForm(TheSystemMenuItem parent /*, MarqueeForm marquee */)
         {
             InitializeComponent();
 
             Version.SetVersion();
 
             this.my_parent = parent;
-            this.marquee_frm = marquee;
+            //this.marquee_frm = marquee;
 
             this.set_screen_number();
             this.Bounds = primary_screen.Bounds;
@@ -63,7 +63,7 @@ namespace OmegaSettingsMenu
 
 
             reset_offset();
-            ItemList.Add(new MarqueeWidthMenuItem(this, new_offset()));
+            ItemList.Add(new ScanlinesMenuItem(this, new_offset()));
             /***************************************************************************************/
             /* After adding the first item, we have the size of the item and can clean up spacing. */
             /***************************************************************************************/
@@ -73,14 +73,14 @@ namespace OmegaSettingsMenu
             ItemList[0].set_location(new_offset());
             /***************************************************************************************/
             /***************************************************************************************/
-            ItemList.Add(new MarqueeHeightMenuItem(this, new_offset()));
-            ItemList.Add(new MarqueeStretchMenuItem(this, new_offset()));
-            ItemList.Add(new MarqueeVerticalAlignmentMenuItem(this, new_offset()));
-            ItemList.Add(new ScanlinesMenuItem(this, new_offset()));
             ItemList.Add(new AdultsOnlyGamesMenuItem(this, new_offset()));
             ItemList.Add(new BackupMenuItem(this, new_offset()));
             ItemList.Add(new ImportBackupMenuItem(this, new_offset()));
-            ItemList.Add(new UpdateCheckMenuItem(this, new_offset()));
+            //ItemList.Add(new UpdateCheckMenuItem(this, new_offset()));
+            //ItemList.Add(new MarqueeWidthMenuItem(this, new_offset()));
+            //ItemList.Add(new MarqueeHeightMenuItem(this, new_offset()));
+            //ItemList.Add(new MarqueeStretchMenuItem(this, new_offset()));
+            //ItemList.Add(new MarqueeVerticalAlignmentMenuItem(this, new_offset()));
             ItemList.Add(new CancelMenuItem(this, new_offset()));
             ItemList.Add(new ExitMenuItem(this, new_offset()));
             
@@ -111,7 +111,7 @@ namespace OmegaSettingsMenu
             load_values_from_xml();
 
             //apply the settings
-            apply();
+            //apply(); //RB: No longer apply settings at startup. Only apply them from the menu.
 
             MovePlayer.URL = Directory.GetParent(Path.GetDirectoryName(Application.ExecutablePath)).ToString() + "/Sounds/Classic/Move.wav";
             SelectPlayer.URL = Directory.GetParent(Path.GetDirectoryName(Application.ExecutablePath)).ToString() + "/Sounds/Multi-Sound Default/Select/SELECT042.wav";
@@ -290,7 +290,7 @@ namespace OmegaSettingsMenu
                 load_values_from_xml();
 
                 //Hide this form
-                marquee_frm.Hide();
+                //marquee_frm.Hide();
                 this.Hide();
             }
 
@@ -365,7 +365,7 @@ namespace OmegaSettingsMenu
             if (applying_settings == false)
             {
                 this.timerExit.Enabled = false;
-                marquee_frm.Hide();
+                //marquee_frm.Hide();
                 this.Hide();
                 panelWait.Hide();
                 panel1.Show();
